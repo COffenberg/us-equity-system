@@ -1,0 +1,1347 @@
+<title>US Equity System Build</title>
+<style>
+  :root {
+    --ground:#EFF2F3; --surface:#FFFFFF; --sunk:#E7ECED;
+    --ink:#151C20; --ink-soft:#59666C; --ink-faint:#8A979C;
+    --rule:#D2DADD; --rule-strong:#B4C0C4;
+    --brass:#96690F; --brass-soft:#F3E7CC;
+    --done:#376B58; --done-soft:#DCE8E2;
+    --idle:#8A979C; --idle-soft:#E4E9EA;
+    --open:#9C3A54; --open-soft:#F2DFE3;
+    --display:"Avenir Next Condensed","HelveticaNeue-CondensedBold","Helvetica Neue",Helvetica,sans-serif;
+    --body:Charter,"Bitstream Charter","Iowan Old Style",Georgia,serif;
+    --mono:"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:#0F1519; --surface:#151D22; --sunk:#111A1E;
+      --ink:#E4ECEF; --ink-soft:#93A2A9; --ink-faint:#6B7A81;
+      --rule:#26333A; --rule-strong:#38484F;
+      --brass:#D6A245; --brass-soft:#2E2617;
+      --done:#6FB396; --done-soft:#172A23;
+      --idle:#6B7A81; --idle-soft:#1B242A;
+      --open:#D4788C; --open-soft:#2C1920;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#0F1519; --surface:#151D22; --sunk:#111A1E;
+    --ink:#E4ECEF; --ink-soft:#93A2A9; --ink-faint:#6B7A81;
+    --rule:#26333A; --rule-strong:#38484F;
+    --brass:#D6A245; --brass-soft:#2E2617;
+    --done:#6FB396; --done-soft:#172A23;
+    --idle:#6B7A81; --idle-soft:#1B242A;
+    --open:#D4788C; --open-soft:#2C1920;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink); font-family:var(--body);
+         font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1000px; margin:0 auto; padding:0 clamp(16px,4vw,36px) 90px; }
+
+  /* ---------- masthead + status strip ---------- */
+  header { padding:clamp(26px,4vw,44px) 0 0; }
+  .eyebrow { font-family:var(--display); font-size:11.5px; letter-spacing:.17em;
+              text-transform:uppercase; color:var(--ink-faint); margin:0; }
+  h1 { font-family:var(--display); font-size:clamp(30px,5vw,44px); line-height:1.02;
+        margin:8px 0 0; text-wrap:balance; }
+
+  .strip { display:grid; grid-template-columns:repeat(auto-fit,minmax(128px,1fr));
+            gap:1px; background:var(--rule); border:1px solid var(--rule);
+            border-radius:3px; overflow:hidden; margin-top:22px; }
+  .strip div { background:var(--surface); padding:14px 16px; }
+  .strip b { display:block; font-family:var(--display); font-size:25px; font-weight:600;
+              line-height:1.05; font-variant-numeric:tabular-nums; }
+  .strip span { font-family:var(--display); font-size:10.5px; letter-spacing:.13em;
+                 text-transform:uppercase; color:var(--ink-faint); }
+  .strip div[data-tone="brass"] b { color:var(--brass); }
+  .strip div[data-tone="done"] b { color:var(--done); }
+
+  /* ---------- tabs ---------- */
+  nav { position:sticky; top:0; z-index:20; background:var(--ground);
+         border-bottom:1px solid var(--rule); margin:26px 0 0;
+         display:flex; gap:2px; overflow-x:auto; }
+  nav button { font-family:var(--display); font-size:12.5px; letter-spacing:.13em;
+                text-transform:uppercase; background:none; border:none; cursor:pointer;
+                color:var(--ink-faint); padding:13px 16px; white-space:nowrap;
+                border-bottom:2px solid transparent; }
+  nav button:hover { color:var(--ink); }
+  nav button[aria-selected="true"] { color:var(--brass); border-bottom-color:var(--brass); }
+  nav button:focus-visible { outline:2px solid var(--brass); outline-offset:-2px; }
+
+  .panel { display:none; padding-top:34px; }
+  .panel[data-active] { display:flex; flex-direction:column; gap:30px; }
+
+  h2 { font-family:var(--display); font-size:12.5px; letter-spacing:.16em;
+        text-transform:uppercase; color:var(--ink-soft); margin:0 0 16px;
+        padding-bottom:9px; border-bottom:1px solid var(--rule); }
+  h3 { font-family:var(--display); font-size:16px; margin:0; }
+  p { margin:0; }
+  .lede { font-size:17px; color:var(--ink-soft); max-width:64ch; }
+
+  .card { background:var(--surface); border:1px solid var(--rule); border-radius:3px; padding:22px 24px; }
+  .card > h3 { font-size:12.5px; letter-spacing:.14em; text-transform:uppercase;
+                color:var(--ink-soft); margin-bottom:15px; }
+  .cols { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:22px; }
+  .card ul { margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:12px; }
+  .card li b { display:block; font-family:var(--display); font-size:15px; font-weight:600; }
+  .card li em { font-style:normal; color:var(--ink-soft); font-size:14.5px; }
+  .note { font-size:14.5px; color:var(--ink-soft); border-left:2px solid var(--rule-strong);
+           padding-left:13px; max-width:66ch; }
+  .mono { font-family:var(--mono); font-size:12.5px; color:var(--ink-faint);
+           background:var(--sunk); border-radius:2px; padding:8px 11px;
+           overflow-x:auto; white-space:nowrap; }
+
+  /* ---------- pending slot ---------- */
+  .pending { border:1px dashed var(--rule-strong); border-radius:3px; padding:30px 26px;
+              background:var(--sunk); display:flex; flex-direction:column; gap:12px; }
+  .pending h3 { font-size:20px; color:var(--ink); }
+  .pending p { color:var(--ink-soft); font-size:15px; max-width:62ch; }
+  .runbadge { display:inline-flex; align-items:center; gap:8px; font-family:var(--display);
+               font-size:11px; letter-spacing:.13em; text-transform:uppercase;
+               color:var(--brass); background:var(--brass-soft); border:1px solid var(--brass);
+               border-radius:2px; padding:4px 9px; align-self:flex-start; }
+  .runbadge i { width:6px; height:6px; border-radius:50%; background:var(--brass); }
+  @media (prefers-reduced-motion:no-preference) {
+    .runbadge i { animation:pulse 1.7s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.25} }
+  }
+
+  /* ---------- order panel ---------- */
+  .trades { background:var(--brass-soft); border:1px solid var(--brass);
+            border-radius:3px; padding:20px 22px; margin-bottom:20px; }
+  .trades h3 { font-size:17px; margin-bottom:10px; }
+  .trades p { font-size:15px; margin-bottom:6px; }
+  .trades .meta { margin-top:10px; }
+  .buy  { font-family:var(--display); font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+          color:var(--done); background:var(--done-soft); padding:2px 7px; border-radius:2px; }
+  .sell { font-family:var(--display); font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+          color:var(--open); background:var(--open-soft); padding:2px 7px; border-radius:2px; }
+          
+  /* ---------- ranked list tables ---------- */
+  .listbox { background:var(--surface); border:1px solid var(--rule); border-radius:3px;
+             padding:20px 22px; margin-bottom:20px; }
+  .listbox h3 { font-size:16px; margin-bottom:4px; }
+  .listbox .sub { font-size:14px; color:var(--ink-soft); margin-bottom:14px; max-width:70ch; }
+  .tw { overflow-x:auto; }
+  .listbox table { border-collapse:collapse; width:100%; font-size:14px; min-width:620px; }
+  .listbox th { font-family:var(--display); font-size:10.5px; letter-spacing:.12em;
+                text-transform:uppercase; color:var(--ink-faint); text-align:left;
+                padding:0 10px 8px 0; border-bottom:1px solid var(--rule); font-weight:600; }
+  .listbox td { padding:7px 10px 7px 0; border-bottom:1px solid var(--rule); }
+  .listbox tr:last-child td { border-bottom:none; }
+  .listbox .r { text-align:right; font-variant-numeric:tabular-nums; }
+  .listbox td.r:first-child { color:var(--ink-faint); font-family:var(--mono); font-size:12px; }
+  .tk { font-family:var(--mono); font-weight:700; font-size:13px; }
+  .sc { font-family:var(--mono); color:var(--brass); font-weight:700; }
+  .dv { color:var(--ink-faint); font-size:12.5px; white-space:nowrap; }
+
+  /* ---------- roadmap ---------- */
+  .goal { background:var(--brass-soft); border:1px solid var(--brass); border-radius:3px;
+          padding:22px 24px; }
+  .goal h3 { font-size:12.5px; letter-spacing:.14em; text-transform:uppercase;
+             color:var(--brass); margin-bottom:12px; }
+  .goal p { font-size:17px; color:var(--ink); max-width:66ch; }
+  .goal p + p { margin-top:10px; }
+  .goal em { font-style:normal; color:var(--ink-soft); font-size:14.5px; }
+
+  .stages { display:flex; flex-direction:column; gap:1px; background:var(--rule);
+            border:1px solid var(--rule); border-radius:3px; overflow:hidden; }
+  .stage { background:var(--surface); padding:20px 24px; border-left:3px solid var(--idle); }
+  .stage[data-s="done"] { border-left-color:var(--done); }
+  .stage[data-s="now"]  { border-left-color:var(--brass); background:var(--sunk); }
+  .stage-head { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; margin-bottom:6px; }
+  .stage-head h3 { font-size:18px; }
+  .stage-when { font-family:var(--mono); font-size:11.5px; color:var(--ink-faint); }
+  .stage > p { color:var(--ink-soft); font-size:14.5px; max-width:66ch; margin-bottom:12px; }
+  .stage ul { margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:7px; }
+  .stage li { display:flex; gap:10px; align-items:baseline; font-size:14.5px; }
+  .stage li span.b { font-family:var(--mono); font-size:12px; flex:none; width:13px; }
+  .stage[data-s="done"] li span.b { color:var(--done); }
+  .stage[data-s="now"] li span.b  { color:var(--brass); }
+  .stage li span.b.todo { color:var(--ink-faint); }
+  .stage li em { font-style:normal; color:var(--ink-faint); font-size:13px; }
+
+  /* ---------- phases ---------- */
+  .phases { display:flex; flex-direction:column; gap:1px; background:var(--rule);
+             border:1px solid var(--rule); border-radius:3px; overflow:hidden; }
+  .ph { background:var(--surface); display:grid; grid-template-columns:58px 1fr auto;
+         gap:16px; align-items:center; padding:15px 22px; border-left:3px solid var(--idle); }
+  .ph[data-s="run"] { border-left-color:var(--brass); }
+  .ph[data-s="done"] { border-left-color:var(--done); }
+  .ph .n { font-family:var(--mono); font-size:11.5px; color:var(--ink-faint); }
+  .ph .t { font-family:var(--display); font-size:16px; font-weight:600; }
+  .ph .t small { display:block; font-family:var(--body); font-size:14px;
+                  font-weight:400; color:var(--ink-soft); }
+  .chip { font-family:var(--display); font-size:10.5px; letter-spacing:.13em;
+           text-transform:uppercase; padding:5px 9px; border-radius:2px; white-space:nowrap;
+           background:var(--idle-soft); color:var(--ink-soft); }
+  .chip[data-s="run"] { background:var(--brass-soft); color:var(--brass); }
+  .chip[data-s="done"] { background:var(--done-soft); color:var(--done); }
+
+  /* ---------- funnel ---------- */
+  .funnel { display:flex; flex-direction:column; gap:1px; background:var(--rule);
+             border:1px solid var(--rule); border-radius:3px; overflow:hidden; }
+  .fstep { background:var(--surface); display:grid; grid-template-columns:70px 1fr;
+            grid-template-areas:"num label" "num bar"; column-gap:18px; row-gap:7px;
+            align-items:center; padding:14px 22px; }
+  .fstep b { grid-area:num; font-family:var(--display); font-size:25px; font-weight:600;
+              text-align:right; font-variant-numeric:tabular-nums; color:var(--ink-faint); }
+  .fstep span { grid-area:label; font-size:14.5px; color:var(--ink-soft); }
+  .fstep i { grid-area:bar; height:4px; background:var(--rule-strong); border-radius:2px; min-width:3px; }
+  .fstep[data-tone="brass"] b { color:var(--brass); } .fstep[data-tone="brass"] i { background:var(--brass); }
+  .fstep[data-tone="done"] b { color:var(--done); }  .fstep[data-tone="done"] i { background:var(--done); }
+
+  /* ---------- driver roots ---------- */
+  .roots { display:flex; flex-direction:column; gap:1px; background:var(--rule);
+            border:1px solid var(--rule); border-radius:3px; overflow:hidden; }
+  .root { background:var(--surface); }
+  .root > summary { cursor:pointer; list-style:none; padding:15px 22px; display:grid;
+                     grid-template-columns:1fr 42px 150px 88px; gap:16px; align-items:center; }
+  .root > summary::-webkit-details-marker { display:none; }
+  .root > summary:hover { background:var(--sunk); }
+  .root > summary:focus-visible { outline:2px solid var(--brass); outline-offset:-2px; }
+  .rname { font-family:var(--display); font-size:15.5px; font-weight:600; }
+  .rcount { font-family:var(--mono); font-size:13px; color:var(--ink-faint);
+             text-align:right; font-variant-numeric:tabular-nums; }
+  .rbar { display:flex; height:7px; border-radius:2px; overflow:hidden; background:var(--sunk); }
+  .rbar i { display:block; height:100%; }
+  .s-val{background:var(--done)} .s-bld{background:var(--brass)}
+  .s-paid{background:var(--rule-strong)} .s-hard{background:var(--open)}
+  .rlegend { font-family:var(--mono); font-size:12px; text-align:right;
+              font-variant-numeric:tabular-nums; }
+  .rlegend b { font-weight:700; margin-left:5px; }
+  .m-val{color:var(--done)} .m-bld{color:var(--brass)}
+  .m-paid{color:var(--ink-faint)} .m-hard{color:var(--open)}
+  .root .what { padding:0 22px; font-size:13.5px; color:var(--ink-faint); }
+  .root ul { margin:0; padding:12px 22px 20px; list-style:none;
+              display:grid; grid-template-columns:repeat(auto-fit,minmax(290px,1fr));
+              gap:7px 22px; }
+  .root li { display:flex; gap:9px; align-items:baseline; font-size:14.5px; line-height:1.4; }
+  .root li small { color:var(--ink-faint); font-size:12.5px; }
+  .m { font-family:var(--mono); font-size:12px; flex:none; width:13px;
+        text-align:center; font-weight:700; }
+  .m.m-val{color:var(--done)} .m.m-bld{color:var(--brass)}
+  .m.m-paid{color:var(--ink-faint)} .m.m-hard{color:var(--open)}
+  .legend { display:flex; flex-wrap:wrap; gap:18px; margin-bottom:16px;
+             font-size:13.5px; color:var(--ink-soft); }
+  .legend span { display:flex; align-items:baseline; gap:7px; }
+
+  /* ---------- open items ---------- */
+  .opens { display:flex; flex-direction:column; gap:1px; background:var(--rule);
+            border:1px solid var(--rule); border-radius:3px; overflow:hidden; }
+  .op { background:var(--surface); padding:17px 22px; display:grid;
+         grid-template-columns:1fr auto; gap:16px; align-items:start;
+         border-left:3px solid var(--open); }
+  .op[data-k="admin"] { border-left-color:var(--idle); }
+  .op b { font-family:var(--display); font-size:15.5px; }
+  .op em { font-style:normal; color:var(--ink-soft); font-size:14.5px; display:block; max-width:64ch; }
+  .tag { font-family:var(--mono); font-size:11px; color:var(--open); white-space:nowrap; }
+  .op[data-k="admin"] .tag { color:var(--ink-faint); }
+
+  footer { color:var(--ink-faint); font-size:13.5px; border-top:1px solid var(--rule);
+            padding-top:20px; margin-top:44px; }
+  footer code { font-family:var(--mono); font-size:12.5px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Build tracker &middot; not a trading system</p>
+    <h1>US Equity Selection System</h1>
+    <div class="strip">
+      <div data-tone="brass"><b>40</b><span>Names in book</span></div>
+      <div data-tone="brass"><b>16</b><span>Trades this month</span></div>
+      <div data-tone="open"><b>-1.4pp</b><span>Edge vs SPY, live</span></div>
+      <div><b>4</b><span>Monthly records</span></div>
+      <div><b>18</b><span>Signals live</span></div>
+      <div><b>24</b><span>Days recorded</span></div>
+    </div>
+  </header>
+
+  <p class="meta" style="margin-top:14px;">Now &mdash; what to act on today. Findings &mdash; what has been tested and what it showed. Roadmap, Drivers and Design are reference.</p>
+
+  <nav role="tablist">
+    <button role="tab" aria-selected="true"  data-t="now">Now</button>
+    <button role="tab" aria-selected="false" data-t="roadmap">Roadmap</button>
+    <button role="tab" aria-selected="false" data-t="findings">Findings</button>
+    <button role="tab" aria-selected="false" data-t="drivers">Drivers</button>
+    <button role="tab" aria-selected="false" data-t="design">Design</button>
+  </nav>
+
+  <!-- ================= NOW ================= -->
+  <section class="panel" data-p="now" data-active>
+    <section>
+      <h2>Today&rsquo;s book</h2>
+      <p class="lede" style="margin-bottom:18px;">Rebuilt 22 Sep on value alone &mdash; sales-to-price, book-to-market and cash-flow-to-price &mdash; after rescreening all 41 signals on the only objective that matters: does a 40-name long-only book beat SPY. Two signals cleared a noise null, and both were value. Stated as percentages because sizing assumes fractional shares.</p>
+<!--ORDERS-->      <div class="trades">
+        <h3>This month&rsquo;s trades &mdash; 16 of them</h3>
+        <p><span class="buy">Buy</span> <b class="tk">CIM</b>, <b class="tk">GRNT</b>, <b class="tk">MRDN</b>, <b class="tk">MTW</b>, <b class="tk">MX</b>, <b class="tk">PAGP</b>, <b class="tk">STRT</b>, <b class="tk">SXC</b> at 2.5% each.</p>
+        <p><span class="sell">Sell</span> <b class="tk">BATL</b>, <b class="tk">COTY</b>, <b class="tk">DEC</b>, <b class="tk">EGHT</b>, <b class="tk">FORR</b>, <b class="tk">JBLU</b>, <b class="tk">REI</b>, <b class="tk">TBLA</b> in full.</p>
+        <p class="meta">The other 32 positions are unchanged. Leave them alone &mdash; trading only the difference is what keeps turnover and tax down.</p>
+      </div>
+      <div class="listbox">
+        <h3>The book &mdash; 40 names, 2.5% each</h3>
+        <p class="sub">Equal weight, capped at six per sector, priced 2026-10-09. Equal because nothing in the evidence justifies betting more on one name than another. A brass dot marks a company reporting within 21 days.</p>
+        <div class="tw"><table><thead><tr><th class="r">#</th><th>Ticker</th><th>Company</th><th>Sector</th><th>Why it is here</th></tr></thead><tbody>
+<tr><td class="r">1</td><td class="tk">BCBP</td><td>BCB BANCORP INC</td><td class="dv">Banks</td><td class="dv">value 0.94, momentum 0.36</td></tr>
+<tr><td class="r">2</td><td class="tk">BH</td><td>Biglari Holdings Inc.</td><td class="dv">Consumer discretionary</td><td class="dv">value 0.92, momentum 0.66</td></tr>
+<tr><td class="r">3</td><td class="tk">MFIN</td><td>MEDALLION FINANCIAL CORP</td><td class="dv">Banks</td><td class="dv">value 0.94, momentum 0.67</td></tr>
+<tr><td class="r">4</td><td class="tk">AMCX</td><td>AMC Global Media Inc.</td><td class="dv">Media & telecom</td><td class="dv">value 0.91, momentum 0.84</td></tr>
+<tr><td class="r">5</td><td class="tk">OPHC</td><td>OptimumBank Holdings, Inc.</td><td class="dv">Banks</td><td class="dv">momentum 0.98, value 0.87</td></tr>
+<tr><td class="r">6</td><td class="tk">DK</td><td>Delek US Holdings, Inc.</td><td class="dv">Energy</td><td class="dv">momentum 0.94, value 0.87</td></tr>
+<tr><td class="r">7</td><td class="tk">LCUT</td><td>LIFETIME BRANDS, INC</td><td class="dv">Industrials</td><td class="dv">momentum 0.93, value 0.88</td></tr>
+<tr><td class="r">8</td><td class="tk">MEI</td><td>METHODE ELECTRONICS INC</td><td class="dv">Technology</td><td class="dv">momentum 0.91, value 0.88</td></tr>
+<tr><td class="r">9</td><td class="tk">SMC</td><td>Summit Midstream Corp</td><td class="dv">Energy</td><td class="dv">value 0.91, momentum 0.71</td></tr>
+<tr><td class="r">10</td><td class="tk">WKC</td><td>WORLD KINECT CORP</td><td class="dv">Industrials</td><td class="dv">value 0.89, momentum 0.85</td></tr>
+<tr><td class="r">11</td><td class="tk">PAGP</td><td>PLAINS GP HOLDINGS LP</td><td class="dv">Transport</td><td class="dv">value 0.95, momentum 0.77</td></tr>
+<tr><td class="r">12</td><td class="tk">GENC</td><td>GENCOR INDUSTRIES INC</td><td class="dv">Industrials</td><td class="dv">value 0.85, momentum 0.76</td></tr>
+<tr><td class="r">13</td><td class="tk">PCG</td><td>PG&E Corp</td><td class="dv">Utilities</td><td class="dv">value 0.87, momentum 0.18</td></tr>
+<tr><td class="r">14</td><td class="tk">GIII <b style="color:var(--brass)" title="reports within 21 days">&bull;</b></td><td>G III APPAREL GROUP LTD /DE/</td><td class="dv">Consumer discretionary</td><td class="dv">value 0.92, momentum 0.54</td></tr>
+<tr><td class="r">15</td><td class="tk">SCSC</td><td>SCANSOURCE, INC.</td><td class="dv">Technology</td><td class="dv">value 0.87, momentum 0.79</td></tr>
+<tr><td class="r">16</td><td class="tk">AHCO</td><td>AdaptHealth Corp.</td><td class="dv">Healthcare services</td><td class="dv">value 0.94, momentum 0.28</td></tr>
+<tr><td class="r">17</td><td class="tk">SSTK</td><td>Shutterstock, Inc.</td><td class="dv">Technology</td><td class="dv">value 0.96, momentum 0.09</td></tr>
+<tr><td class="r">18</td><td class="tk">NAVI</td><td>NAVIENT CORP</td><td class="dv">Financial other</td><td class="dv">value 0.87, momentum 0.42</td></tr>
+<tr><td class="r">19</td><td class="tk">EIX</td><td>EDISON INTERNATIONAL</td><td class="dv">Utilities</td><td class="dv">value 0.85, momentum 0.56</td></tr>
+<tr><td class="r">20</td><td class="tk">CIM</td><td>CHIMERA INVESTMENT CORP</td><td class="dv">Real estate</td><td class="dv">value 0.94, momentum 0.19</td></tr>
+<tr><td class="r">21</td><td class="tk">RM</td><td>Regional Management Corp.</td><td class="dv">Banks</td><td class="dv">value 0.92, momentum 0.26</td></tr>
+<tr><td class="r">22</td><td class="tk">CVGI</td><td>Commercial Vehicle Group, In</td><td class="dv">Industrials</td><td class="dv">value 0.90, momentum 0.69</td></tr>
+<tr><td class="r">23</td><td class="tk">VLGEA <b style="color:var(--brass)" title="reports within 21 days">&bull;</b></td><td>VILLAGE SUPER MARKET INC</td><td class="dv">Consumer discretionary</td><td class="dv">value 0.94, momentum 0.76</td></tr>
+<tr><td class="r">24</td><td class="tk">OPRT</td><td>Oportun Financial Corp</td><td class="dv">Banks</td><td class="dv">momentum 0.91, value 0.88</td></tr>
+<tr><td class="r">25</td><td class="tk">VYX</td><td>NCR Voyix Corp</td><td class="dv">Technology</td><td class="dv">value 0.93, momentum 0.40</td></tr>
+<tr><td class="r">26</td><td class="tk">USNA</td><td>USANA HEALTH SCIENCES INC</td><td class="dv">Biotech & pharma</td><td class="dv">value 0.95, momentum 0.35</td></tr>
+<tr><td class="r">27</td><td class="tk">TRLV</td><td>Trulieve Cannabis Corp.</td><td class="dv">Biotech & pharma</td><td class="dv">value 0.79, momentum 0.78</td></tr>
+<tr><td class="r">28</td><td class="tk">CLW</td><td>Clearwater Paper Corp</td><td class="dv">Materials</td><td class="dv">value 0.96, momentum 0.63</td></tr>
+<tr><td class="r">29</td><td class="tk">MRDN</td><td>Meridian Holdings Inc./NV</td><td class="dv">Technology</td><td class="dv">value 0.80, momentum 0.67</td></tr>
+<tr><td class="r">30</td><td class="tk">ATNI</td><td>ATN International, Inc.</td><td class="dv">Media & telecom</td><td class="dv">value 0.84, momentum 0.81</td></tr>
+<tr><td class="r">31</td><td class="tk">MX</td><td>MAGNACHIP SEMICONDUCTOR Corp</td><td class="dv">Technology</td><td class="dv">value 0.83, momentum 0.57</td></tr>
+<tr><td class="r">32</td><td class="tk">DOLE</td><td>Dole plc</td><td class="dv">Consumer staples</td><td class="dv">value 0.88, momentum 0.60</td></tr>
+<tr><td class="r">33</td><td class="tk">MTW</td><td>MANITOWOC CO INC</td><td class="dv">Industrials</td><td class="dv">momentum 0.93, value 0.79</td></tr>
+<tr><td class="r">34</td><td class="tk">IPI</td><td>Intrepid Potash, Inc.</td><td class="dv">Materials</td><td class="dv">value 0.92, momentum 0.64</td></tr>
+<tr><td class="r">35</td><td class="tk">ADV</td><td>Advantage Solutions Inc.</td><td class="dv">Business services</td><td class="dv">value 0.85, momentum 0.58</td></tr>
+<tr><td class="r">36</td><td class="tk">GRNT</td><td>Granite Ridge Resources, Inc</td><td class="dv">Energy</td><td class="dv">value 0.81, momentum 0.21</td></tr>
+<tr><td class="r">37</td><td class="tk">BDL</td><td>FLANIGANS ENTERPRISES INC</td><td class="dv">Consumer discretionary</td><td class="dv">momentum 0.89, value 0.76</td></tr>
+<tr><td class="r">38</td><td class="tk">UHAL</td><td>U-Haul Holding Co /NV/</td><td class="dv">Business services</td><td class="dv">value 0.96, momentum 0.72</td></tr>
+<tr><td class="r">39</td><td class="tk">STRT</td><td>STRATTEC SECURITY CORP</td><td class="dv">Industrials</td><td class="dv">value 0.83, momentum 0.47</td></tr>
+<tr><td class="r">40</td><td class="tk">SXC</td><td>SunCoke Energy, Inc.</td><td class="dv">Materials</td><td class="dv">value 0.83, momentum 0.81</td></tr>
+        </tbody></table></div>
+      </div>
+<!--/ORDERS-->
+      <p class="note" style="margin-top:14px;"><b>Not advice, and deliberately high-risk.</b> Forty names because the payoff shape demands it, not from caution. Expect individual positions to halve. The scoreboard below is the honest record of whether any of this is working &mdash; as of today, it is not yet.</p>
+    </section>
+
+    <section>
+      <h2>Scoreboard &mdash; every frozen list, every day</h2>
+      <p class="lede" style="margin-bottom:18px;">The edge measured in this system lives at 21&ndash;63 days and is gone by 252. Checking at twelve months would measure after the signal has decayed. So every frozen list is marked to market daily against SPY from its own entry date, and a new list is frozen every month.</p>
+      <div class="listbox">
+        <h3>Every frozen list, marked to market</h3>
+        <p class="sub">Equal-weight return of the list since freeze, against SPY over the same window. Hit is the share of names beating SPY. Regenerated by the daily job.</p>
+        <div class="tw"><table><thead><tr><th>Frozen</th><th>List</th><th class="r">Days</th><th class="r">Return</th><th class="r">SPY</th><th class="r">vs SPY</th><th class="r">Hit</th><th class="r">Best / worst</th></tr></thead><tbody>
+<tr><td class="tk">2026-08-19</td><td>COMBINED</td><td class="r">51</td><td class="r">-0.72%</td><td class="r">+0.76%</td><td class="r sc" style="color:var(--open)">-1.48%</td><td class="r">42%</td><td class="r dv">+62% / -33%</td></tr>
+<tr><td class="tk">2026-08-19</td><td>CORE</td><td class="r">51</td><td class="r">-1.32%</td><td class="r">+0.76%</td><td class="r sc" style="color:var(--open)">-2.08%</td><td class="r">43%</td><td class="r dv">+62% / -31%</td></tr>
+<tr><td class="tk">2026-08-19</td><td>READACROSS</td><td class="r">51</td><td class="r">+4.31%</td><td class="r">+0.76%</td><td class="r sc" style="color:var(--done)">+3.54%</td><td class="r">48%</td><td class="r dv">+62% / -28%</td></tr>
+<tr><td class="tk">2026-08-19</td><td>SKEW</td><td class="r">51</td><td class="r">-0.98%</td><td class="r">+0.76%</td><td class="r sc" style="color:var(--open)">-1.75%</td><td class="r">38%</td><td class="r dv">+62% / -33%</td></tr>
+<tr><td class="tk">2026-09-06</td><td>COMBINED</td><td class="r">33</td><td class="r">-0.68%</td><td class="r">+1.09%</td><td class="r sc" style="color:var(--open)">-1.76%</td><td class="r">27%</td><td class="r dv">+36% / -15%</td></tr>
+<tr><td class="tk">2026-09-06</td><td>CORE</td><td class="r">33</td><td class="r">-4.28%</td><td class="r">+1.09%</td><td class="r sc" style="color:var(--open)">-5.37%</td><td class="r">29%</td><td class="r dv">+13% / -21%</td></tr>
+<tr><td class="tk">2026-09-06</td><td>READACROSS</td><td class="r">33</td><td class="r">+3.59%</td><td class="r">+1.09%</td><td class="r sc" style="color:var(--done)">+2.50%</td><td class="r">55%</td><td class="r dv">+41% / -22%</td></tr>
+<tr><td class="tk">2026-09-06</td><td>SKEW</td><td class="r">33</td><td class="r">+1.47%</td><td class="r">+1.09%</td><td class="r sc" style="color:var(--done)">+0.38%</td><td class="r">37%</td><td class="r dv">+36% / -28%</td></tr>
+<tr><td class="tk">2026-09-21</td><td>COMBINED</td><td class="r">18</td><td class="r">+0.95%</td><td class="r">+0.83%</td><td class="r sc" style="color:var(--done)">+0.12%</td><td class="r">46%</td><td class="r dv">+22% / -13%</td></tr>
+<tr><td class="tk">2026-09-21</td><td>CORE</td><td class="r">18</td><td class="r">-0.48%</td><td class="r">+0.83%</td><td class="r sc" style="color:var(--open)">-1.31%</td><td class="r">46%</td><td class="r dv">+15% / -13%</td></tr>
+<tr><td class="tk">2026-09-21</td><td>READACROSS</td><td class="r">18</td><td class="r">+5.74%</td><td class="r">+0.83%</td><td class="r sc" style="color:var(--done)">+4.91%</td><td class="r">62%</td><td class="r dv">+22% / -6%</td></tr>
+<tr><td class="tk">2026-09-21</td><td>SKEW</td><td class="r">18</td><td class="r">+2.84%</td><td class="r">+0.83%</td><td class="r sc" style="color:var(--done)">+2.01%</td><td class="r">60%</td><td class="r dv">+22% / -16%</td></tr>
+<tr><td class="tk">2026-09-22</td><td>COMBINED</td><td class="r">17</td><td class="r">-0.75%</td><td class="r">+0.66%</td><td class="r sc" style="color:var(--open)">-1.40%</td><td class="r">39%</td><td class="r dv">+16% / -16%</td></tr>
+<tr><td class="tk">2026-09-22</td><td>CORE</td><td class="r">17</td><td class="r">-5.41%</td><td class="r">+0.66%</td><td class="r sc" style="color:var(--open)">-6.06%</td><td class="r">29%</td><td class="r dv">+28% / -38%</td></tr>
+<tr><td class="tk">2026-09-22</td><td>READACROSS</td><td class="r">17</td><td class="r">+5.23%</td><td class="r">+0.66%</td><td class="r sc" style="color:var(--done)">+4.57%</td><td class="r">71%</td><td class="r dv">+21% / -6%</td></tr>
+<tr><td class="tk">2026-09-22</td><td>SKEW</td><td class="r">17</td><td class="r">-0.23%</td><td class="r">+0.66%</td><td class="r sc" style="color:var(--open)">-0.89%</td><td class="r">41%</td><td class="r dv">+16% / -20%</td></tr>
+</tbody></table></div>
+      </div>
+      <p class="note"><b>First reading, 21 Sep: every list is behind SPY.</b> The August lists are 2&ndash;3.5pp behind at 33 days; the September lists 0.6&ndash;3.5pp behind at 15 days. Eight list-observations, all negative. Read-across is the least bad both times (&minus;1.1pp, 46% hit rate). This is inside the noise band for a 40-name list &mdash; and it is also exactly the kind of result that must be shown rather than explained away. Two more months will say whether it is a bad start or a bad system.</p>
+      <p class="note" style="margin-top:12px;"><b>Read one month as one observation, not a verdict.</b> A 40-name list moves &plusmn;5&ndash;8% in a quarter on noise alone. Separating a real +1&ndash;2%-a-month edge from luck takes on the order of a dozen monthly freezes. The scoreboard makes the waiting visible and honest; it does not shorten it.</p>
+    </section>
+
+    <section>
+      <h2>Reference &mdash; the three raw lists</h2>
+      <details class="root" style="border:1px solid var(--rule);border-radius:3px;">
+        <summary style="grid-template-columns:1fr auto;padding:15px 22px;">
+          <span class="rname">Core, Skew and Combined, unsized</span>
+          <span class="rcount">open</span></summary>
+        <div style="padding:6px 22px 20px;">
+        <p class="sub" style="margin-bottom:14px;">The book above is Combined. These are the same rankings before sizing &mdash; Core is the fundamental backbone with no momentum, Skew leans on upside asymmetry. Kept for when you want to see how the two halves disagree.</p>
+
+      
+      <div class="strip" style="margin:0 0 20px;">
+        <div data-tone="done"><b>2,522</b><span>Names scored</span></div>
+        <div><b>23</b><span>Signals</span></div>
+        <div><b>2</b><span>Clusters</span></div>
+        <div data-tone="brass"><b>12</b><span>Sectors in top 40</span></div>
+        <div data-tone="brass"><b>580</b><span>Frozen predictions</span></div>
+      </div>
+      <div class="listbox">
+      <h3>Core &mdash; top 15 of 40</h3><p class="sub">Fundamental backbone only: financing, value, profitability, earnings, low risk. No price momentum.</p>
+      <div class="tw"><table><thead><tr><th class="r">#</th><th>Ticker</th><th>Company</th><th>Sector</th><th class="r">Cap</th><th class="r">Score</th><th>Top drivers</th></tr></thead>
+      <tbody>
+<tr><td class="r">1</td><td class="tk">FMCC</td><td>FEDERAL HOME LOAN MORT</td><td class="dv">Banks</td><td class="r">$2.4bn</td><td class="r sc">0.997</td><td class="dv">value 1.00, momentum 0.07</td></tr>
+<tr><td class="r">2</td><td class="tk">FNMA</td><td>FEDERAL NATIONAL MORTG</td><td class="dv">Banks</td><td class="r">$4.7bn</td><td class="r sc">0.997</td><td class="dv">value 1.00, momentum 0.07</td></tr>
+<tr><td class="r">3</td><td class="tk">CABO</td><td>Cable One, Inc.</td><td class="dv">Media &amp; telecom</td><td class="r">$0.1bn</td><td class="r sc">0.984</td><td class="dv">value 0.98, momentum 0.05</td></tr>
+<tr><td class="r">4</td><td class="tk">RC</td><td>Ready Capital Corp</td><td class="dv">Real estate</td><td class="r">$0.2bn</td><td class="r sc">0.981</td><td class="dv">value 0.98, momentum 0.12</td></tr>
+<tr><td class="r">5</td><td class="tk">TTEC</td><td>TTEC Holdings, Inc.</td><td class="dv">Business services</td><td class="r">$0.1bn</td><td class="r sc">0.979</td><td class="dv">value 0.98, momentum 0.21</td></tr>
+<tr><td class="r">6</td><td class="tk">MIR</td><td>Mirion Technologies, I</td><td class="dv">Medical devices</td><td class="r">$0.3bn</td><td class="r sc">0.964</td><td class="dv">value 0.96, momentum 0.37</td></tr>
+<tr><td class="r">7</td><td class="tk">CLW</td><td>Clearwater Paper Corp</td><td class="dv">Materials</td><td class="r">$0.3bn</td><td class="r sc">0.962</td><td class="dv">value 0.96, momentum 0.63</td></tr>
+<tr><td class="r">8</td><td class="tk">UHAL</td><td>U-Haul Holding Co /NV/</td><td class="dv">Business services</td><td class="r">$1.1bn</td><td class="r sc">0.962</td><td class="dv">value 0.96, momentum 0.72</td></tr>
+<tr><td class="r">9</td><td class="tk">SSTK</td><td>Shutterstock, Inc.</td><td class="dv">Technology</td><td class="r">$0.2bn</td><td class="r sc">0.961</td><td class="dv">value 0.96, momentum 0.09</td></tr>
+<tr><td class="r">10</td><td class="tk">BGS</td><td>B&amp;G Foods, Inc.</td><td class="dv">Consumer staples</td><td class="r">$0.2bn</td><td class="r sc">0.960</td><td class="dv">value 0.96, momentum 0.29</td></tr>
+<tr><td class="r">11</td><td class="tk">KLC</td><td>KinderCare Learning Co</td><td class="dv">Business services</td><td class="r">$0.2bn</td><td class="r sc">0.958</td><td class="dv">value 0.96, momentum 0.20</td></tr>
+<tr><td class="r">12</td><td class="tk">DXC</td><td>DXC Technology Co</td><td class="dv">Technology</td><td class="r">$2.0bn</td><td class="r sc">0.952</td><td class="dv">value 0.95, momentum 0.51</td></tr>
+<tr><td class="r">13</td><td class="tk">CLVT</td><td>CLARIVATE PLC</td><td class="dv">Technology</td><td class="r">$1.0bn</td><td class="r sc">0.951</td><td class="dv">value 0.95, momentum 0.23</td></tr>
+<tr><td class="r">14</td><td class="tk">BOOM</td><td>DMC Global Inc.</td><td class="dv">Materials</td><td class="r">$0.1bn</td><td class="r sc">0.951</td><td class="dv">value 0.95, momentum 0.38</td></tr>
+<tr><td class="r">15</td><td class="tk">USNA</td><td>USANA HEALTH SCIENCES </td><td class="dv">Biotech &amp; pharma</td><td class="r">$0.3bn</td><td class="r sc">0.950</td><td class="dv">value 0.95, momentum 0.35</td></tr>
+</tbody></table></div></div>
+      <div class="listbox">
+      <h3>Skew &mdash; top 15 of 40</h3><p class="sub">Half backbone, half upside asymmetry: 52-week-high proximity, momentum, relative strength, volume trend.</p>
+      <div class="tw"><table><thead><tr><th class="r">#</th><th>Ticker</th><th>Company</th><th>Sector</th><th class="r">Cap</th><th class="r">Score</th><th>Top drivers</th></tr></thead>
+      <tbody>
+<tr><td class="r">1</td><td class="tk">OPHC</td><td>OptimumBank Holdings, </td><td class="dv">Banks</td><td class="r">$0.1bn</td><td class="r sc">0.931</td><td class="dv">momentum 0.98, value 0.87</td></tr>
+<tr><td class="r">2</td><td class="tk">BH</td><td>Biglari Holdings Inc.</td><td class="dv">Consumer discretionary</td><td class="r">$0.1bn</td><td class="r sc">0.928</td><td class="dv">value 0.92, momentum 0.66</td></tr>
+<tr><td class="r">3</td><td class="tk">DK</td><td>Delek US Holdings, Inc</td><td class="dv">Energy</td><td class="r">$4.6bn</td><td class="r sc">0.927</td><td class="dv">momentum 0.94, value 0.87</td></tr>
+<tr><td class="r">4</td><td class="tk">BCBP</td><td>BCB BANCORP INC</td><td class="dv">Banks</td><td class="r">$0.1bn</td><td class="r sc">0.920</td><td class="dv">value 0.94, momentum 0.36</td></tr>
+<tr><td class="r">5</td><td class="tk">AMCX</td><td>AMC Global Media Inc.</td><td class="dv">Media &amp; telecom</td><td class="r">$0.5bn</td><td class="r sc">0.913</td><td class="dv">value 0.91, momentum 0.84</td></tr>
+<tr><td class="r">6</td><td class="tk">LCUT</td><td>LIFETIME BRANDS, INC</td><td class="dv">Industrials</td><td class="r">$0.2bn</td><td class="r sc">0.911</td><td class="dv">momentum 0.93, value 0.88</td></tr>
+<tr><td class="r">7</td><td class="tk">MEI</td><td>METHODE ELECTRONICS IN</td><td class="dv">Technology</td><td class="r">$0.6bn</td><td class="r sc">0.905</td><td class="dv">momentum 0.91, value 0.88</td></tr>
+<tr><td class="r">8</td><td class="tk">GENC</td><td>GENCOR INDUSTRIES INC</td><td class="dv">Industrials</td><td class="r">$0.3bn</td><td class="r sc">0.903</td><td class="dv">value 0.85, momentum 0.76</td></tr>
+<tr><td class="r">9</td><td class="tk">MFIN</td><td>MEDALLION FINANCIAL CO</td><td class="dv">Banks</td><td class="r">$0.3bn</td><td class="r sc">0.903</td><td class="dv">value 0.94, momentum 0.67</td></tr>
+<tr><td class="r">10</td><td class="tk">TRLV</td><td>Trulieve Cannabis Corp</td><td class="dv">Biotech &amp; pharma</td><td class="r">$2.1bn</td><td class="r sc">0.888</td><td class="dv">value 0.79, momentum 0.78</td></tr>
+<tr><td class="r">11</td><td class="tk">WKC</td><td>WORLD KINECT CORP</td><td class="dv">Industrials</td><td class="r">$1.9bn</td><td class="r sc">0.886</td><td class="dv">value 0.89, momentum 0.85</td></tr>
+<tr><td class="r">12</td><td class="tk">SMC</td><td>Summit Midstream Corp</td><td class="dv">Energy</td><td class="r">$0.3bn</td><td class="r sc">0.883</td><td class="dv">value 0.91, momentum 0.71</td></tr>
+<tr><td class="r">13</td><td class="tk">PCG</td><td>PG&amp;E Corp</td><td class="dv">Utilities</td><td class="r">$35.2bn</td><td class="r sc">0.882</td><td class="dv">value 0.87, momentum 0.18</td></tr>
+<tr><td class="r">14</td><td class="tk">BDL</td><td>FLANIGANS ENTERPRISES </td><td class="dv">Consumer discretionary</td><td class="r">$0.1bn</td><td class="r sc">0.880</td><td class="dv">momentum 0.89, value 0.76</td></tr>
+<tr><td class="r">15</td><td class="tk">MRDN</td><td>Meridian Holdings Inc.</td><td class="dv">Technology</td><td class="r">$0.1bn</td><td class="r sc">0.879</td><td class="dv">value 0.80, momentum 0.67</td></tr>
+</tbody></table></div></div>
+      <div class="listbox">
+      <h3>Combined &mdash; top 15 of 40</h3><p class="sub">70% backbone, 30% skew.</p>
+      <div class="tw"><table><thead><tr><th class="r">#</th><th>Ticker</th><th>Company</th><th>Sector</th><th class="r">Cap</th><th class="r">Score</th><th>Top drivers</th></tr></thead>
+      <tbody>
+<tr><td class="r">1</td><td class="tk">BCBP</td><td>BCB BANCORP INC</td><td class="dv">Banks</td><td class="r">$0.1bn</td><td class="r sc">0.929</td><td class="dv">value 0.94, momentum 0.36</td></tr>
+<tr><td class="r">2</td><td class="tk">BH</td><td>Biglari Holdings Inc.</td><td class="dv">Consumer discretionary</td><td class="r">$0.1bn</td><td class="r sc">0.926</td><td class="dv">value 0.92, momentum 0.66</td></tr>
+<tr><td class="r">3</td><td class="tk">MFIN</td><td>MEDALLION FINANCIAL CO</td><td class="dv">Banks</td><td class="r">$0.3bn</td><td class="r sc">0.918</td><td class="dv">value 0.94, momentum 0.67</td></tr>
+<tr><td class="r">4</td><td class="tk">AMCX</td><td>AMC Global Media Inc.</td><td class="dv">Media &amp; telecom</td><td class="r">$0.5bn</td><td class="r sc">0.910</td><td class="dv">value 0.91, momentum 0.84</td></tr>
+<tr><td class="r">5</td><td class="tk">OPHC</td><td>OptimumBank Holdings, </td><td class="dv">Banks</td><td class="r">$0.1bn</td><td class="r sc">0.906</td><td class="dv">momentum 0.98, value 0.87</td></tr>
+<tr><td class="r">6</td><td class="tk">DK</td><td>Delek US Holdings, Inc</td><td class="dv">Energy</td><td class="r">$4.6bn</td><td class="r sc">0.903</td><td class="dv">momentum 0.94, value 0.87</td></tr>
+<tr><td class="r">7</td><td class="tk">LCUT</td><td>LIFETIME BRANDS, INC</td><td class="dv">Industrials</td><td class="r">$0.2bn</td><td class="r sc">0.899</td><td class="dv">momentum 0.93, value 0.88</td></tr>
+<tr><td class="r">8</td><td class="tk">MEI</td><td>METHODE ELECTRONICS IN</td><td class="dv">Technology</td><td class="r">$0.6bn</td><td class="r sc">0.894</td><td class="dv">momentum 0.91, value 0.88</td></tr>
+<tr><td class="r">9</td><td class="tk">SMC</td><td>Summit Midstream Corp</td><td class="dv">Energy</td><td class="r">$0.3bn</td><td class="r sc">0.894</td><td class="dv">value 0.91, momentum 0.71</td></tr>
+<tr><td class="r">10</td><td class="tk">WKC</td><td>WORLD KINECT CORP</td><td class="dv">Industrials</td><td class="r">$1.9bn</td><td class="r sc">0.886</td><td class="dv">value 0.89, momentum 0.85</td></tr>
+<tr><td class="r">11</td><td class="tk">PAGP</td><td>PLAINS GP HOLDINGS LP</td><td class="dv">Transport</td><td class="r">$5.3bn</td><td class="r sc">0.885</td><td class="dv">value 0.95, momentum 0.77</td></tr>
+<tr><td class="r">12</td><td class="tk">GENC</td><td>GENCOR INDUSTRIES INC</td><td class="dv">Industrials</td><td class="r">$0.3bn</td><td class="r sc">0.882</td><td class="dv">value 0.85, momentum 0.76</td></tr>
+<tr><td class="r">13</td><td class="tk">PCG</td><td>PG&amp;E Corp</td><td class="dv">Utilities</td><td class="r">$35.2bn</td><td class="r sc">0.878</td><td class="dv">value 0.87, momentum 0.18</td></tr>
+<tr><td class="r">14</td><td class="tk">GIII <b style="color:var(--brass)">&bull;</b></td><td>G III APPAREL GROUP LT</td><td class="dv">Consumer discretionary</td><td class="r">$1.1bn</td><td class="r sc">0.877</td><td class="dv">value 0.92, momentum 0.54</td></tr>
+<tr><td class="r">15</td><td class="tk">SCSC</td><td>SCANSOURCE, INC.</td><td class="dv">Technology</td><td class="r">$1.2bn</td><td class="r sc">0.870</td><td class="dv">value 0.87, momentum 0.79</td></tr>
+</tbody></table></div></div>
+      <p class="note" style="margin-top:18px;"><b>Ranked inside each sector, then capped at six per sector.</b> A P/E of 12 is cheap for software and ordinary for a bank, so ranking valuation across the whole market mostly ranks sectors rather than stocks. Every signal is now ranked against sector peers, which also does most of the work of reading bank accounts by bank rules &mdash; &ldquo;more levered than other banks&rdquo; means something, &ldquo;more levered than a software company&rdquo; does not. Banks and insurers are scored again rather than excluded. <b>Measured 2026-10-11, and it does not hold up:</b> the same value book ranked across the whole market instead of inside sectors beat the sector-relative book by +0.52%/month over 24 months (t 1.56, randomisation p 0.065; +0.47%/month, t 1.23 with the ranking pools matched). The registered verdict is &ldquo;belief broken&rdquo;, but the evidence is thin; nothing changes until a forward check registered today reads out in 2027-03. The 8-per-sector cap almost never binds on the value-only book (the uncapped sector-relative book is identical to the capped one in all 24 months; market-wide, 23 of 24).</p>
+      <p class="note" style="margin-top:12px;"><b>That fixed the yardstick but not the outcome.</b> Concentration moved rather than disappearing &mdash; insurance at 5.9x gave way to biotech at 3.4x, because a profitable biotech among cash-burners outranks its peers on every axis at once. Sectors differ in internal spread, so the cap sits in construction where it belongs, leaving the ranks untouched.</p>
+      <p class="note" style="margin-top:12px;"><b>Earnings timing is now in the system, pointed the other way round.</b> A brass dot marks a name reporting within 21 days. Across 65,232 announcement windows only <b>46.3% were positive</b> and the median was <b>0.00%</b> &mdash; buying ahead of a print is a coin flip on the surprise, slightly worse than even. The documented edge sits <em>after</em> the print: the market under-reacts to results already public. So the signal built is drift after the announcement, not anticipation of it. CoreWeave is the case in point &mdash; it has popped on 2 of its last 6 reports.</p>
+      <p class="note" style="margin-top:12px;"><b>The two lists still disagree, which is the point.</b> Core and Skew share only 5 of 40 names. Core surfaces utilities, healthcare and steady compounders; Skew surfaces refiners, specialty lenders and microcaps. A composite where they agreed would mean the skew term was decorative.</p>
+            </div>
+      </details>
+    </section>
+
+
+    <section>
+      <h2>Read-across watchlist</h2>
+      <p class="lede" style="margin-bottom:18px;">Names reporting within 21 days whose sector peers have already reported well. This is the mechanism behind buying an AI-infrastructure name before its print &mdash; the customers reported first, so part of the number was public before it was announced.</p>
+      <div class="strip" style="margin:0 0 18px;">
+        <div data-tone="done"><b>38,576</b><span>Events tested</span></div>
+        <div data-tone="brass"><b>41&rarr;62%</b><span>Hit rate by peer quintile</span></div>
+        <div><b>+19 pts</b><span>vs +7 for sector momentum</span></div>
+        <div><b>74</b><span>Names qualify now</span></div>
+      </div>
+      <div class="listbox">
+        <h3>Reporting soon, peers already beat</h3>
+        <p class="sub">Ranked by composite score. Peer column is the sector&rsquo;s percentile on how the market took its recent reports.</p>
+        <div class="tw"><table><thead><tr><th class="r">#</th><th>Ticker</th><th>Company</th><th>Sector</th><th class="r">Reports</th><th class="r">Peer</th><th class="r">Score</th></tr></thead>
+        <tbody>
+<tr><td class="r">1</td><td class="tk">NAVN</td><td>Navan, Inc.</td><td class="dv">Technology</td><td class="r">20d</td><td class="r sc">0.78</td><td class="r">0.826</td></tr>
+<tr><td class="r">2</td><td class="tk">BBCP</td><td>Concrete Pumping Holding</td><td class="dv">Industrials</td><td class="r">14d</td><td class="r sc">0.72</td><td class="r">0.778</td></tr>
+<tr><td class="r">3</td><td class="tk">TTAN</td><td>ServiceTitan, Inc.</td><td class="dv">Technology</td><td class="r">9d</td><td class="r sc">0.78</td><td class="r">0.726</td></tr>
+<tr><td class="r">4</td><td class="tk">CXM</td><td>Sprinklr, Inc.</td><td class="dv">Technology</td><td class="r">15d</td><td class="r sc">0.78</td><td class="r">0.725</td></tr>
+<tr><td class="r">5</td><td class="tk">HOV</td><td>HOVNANIAN ENTERPRISES IN</td><td class="dv">Industrials</td><td class="r">13d</td><td class="r sc">0.72</td><td class="r">0.721</td></tr>
+<tr><td class="r">6</td><td class="tk">THO</td><td>THOR INDUSTRIES INC</td><td class="dv">Industrials</td><td class="r">14d</td><td class="r sc">0.72</td><td class="r">0.713</td></tr>
+<tr><td class="r">7</td><td class="tk">PATH</td><td>UiPath, Inc.</td><td class="dv">Technology</td><td class="r">18d</td><td class="r sc">0.78</td><td class="r">0.710</td></tr>
+<tr><td class="r">8</td><td class="tk">LAKE</td><td>LAKELAND INDUSTRIES INC</td><td class="dv">Medical devices</td><td class="r">20d</td><td class="r sc">0.89</td><td class="r">0.687</td></tr>
+<tr><td class="r">9</td><td class="tk">NCNO</td><td>nCino, Inc.</td><td class="dv">Technology</td><td class="r">6d</td><td class="r sc">0.78</td><td class="r">0.681</td></tr>
+<tr><td class="r">10</td><td class="tk">OOMA</td><td>OOMA INC</td><td class="dv">Technology</td><td class="r">16d</td><td class="r sc">0.78</td><td class="r">0.667</td></tr>
+<tr><td class="r">11</td><td class="tk">SAIC</td><td>Science Applications Int</td><td class="dv">Technology</td><td class="r">12d</td><td class="r sc">0.78</td><td class="r">0.664</td></tr>
+<tr><td class="r">12</td><td class="tk">COO</td><td>COOPER COMPANIES, INC.</td><td class="dv">Medical devices</td><td class="r">16d</td><td class="r sc">0.89</td><td class="r">0.655</td></tr>
+<tr><td class="r">13</td><td class="tk">MOV</td><td>MOVADO GROUP INC</td><td class="dv">Industrials</td><td class="r">7d</td><td class="r sc">0.72</td><td class="r">0.651</td></tr>
+<tr><td class="r">14</td><td class="tk">HPE</td><td>Hewlett Packard Enterpri</td><td class="dv">Technology</td><td class="r">13d</td><td class="r sc">0.78</td><td class="r">0.630</td></tr>
+<tr><td class="r">15</td><td class="tk">SAIL</td><td>SailPoint, Inc.</td><td class="dv">Technology</td><td class="r">20d</td><td class="r sc">0.78</td><td class="r">0.625</td></tr>
+</tbody></table></div>
+      </div>
+      <p class="note"><b>The drift is before the print, not at it.</b> Announcement-day returns are flat across every peer bucket (~50%). The move happens in the two weeks beforehand as the market prices in what peers revealed. Being early is the whole trade.</p>
+      <p class="note" style="margin-top:12px;"><b>Expect about 2%, not 40%.</b> Median pre-window return in the top bucket is +2.10% against +0.30% baseline. With no commission to pay, realisation tax is what eats into that. The 40% draws exist in the tail of this distribution &mdash; they are not its centre, and a strategy sized as though they were will not survive.</p>
+      <p class="note" style="margin-top:12px;"><b>What would still overturn it.</b> Three years of data is one regime; 179 events share each sector-quarter, so the reported t-stat of 24.85 is inflated by overlap and the effect size is the trustworthy number, not the significance. And this was measured on the same data that prompted the hypothesis. It needs a forward window before it carries real size.</p>
+    </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <section>
+      <h2>Data on hand</h2>
+      <div class="cols">
+        <div class="card">
+          <h3>Fundamentals</h3>
+          <div class="strip" style="margin:0 0 14px;">
+            <div><b>1.8M</b><span>Rows</span></div>
+            <div><b>8,434</b><span>Companies</span></div>
+            <div><b>22</b><span>Concepts</span></div>
+          </div>
+          <p class="note">Pulled free from SEC&rsquo;s XBRL frames API, which returns one accounting concept for every US filer in a single request. No paid feed, no 1.5GB download.</p>
+        </div>
+        <div class="card">
+          <h3>Prices</h3>
+          <div class="strip" style="margin:0 0 14px;">
+            <div><b>6.0M</b><span>Rows</span></div>
+            <div><b>9,394</b><span>Tickers</span></div>
+            <div><b>3y</b><span>History</span></div>
+          </div>
+          <p class="note">Median US listed stock trades just <b>$419k a day</b>. The $500k liquidity floor cuts 9,394 names to <b>4,556</b> &mdash; that is the real investable universe, and it is a feature: the illiquid tail is where the reading advantage lives, but only at size you can actually exit.</p>
+        </div>
+      </div>
+    </section>
+
+
+  </section>
+
+  <!-- ================= ROADMAP ================= -->
+  <section class="panel" data-p="roadmap">
+    <div class="goal">
+      <h3>The goal, unchanged</h3>
+      <p>Invest actively and at deliberately high risk, using far more data points than a conventional screen, to produce the <b>highest possible return</b> &mdash; judged on results, not on whether the method looks respectable.</p>
+      <p>Enough independent drivers to tilt the odds materially, reviewed daily.</p>
+      <p><em>The owner&rsquo;s framing, set 2026-08-17 and restated since. Not financial advice; the owner carries the risk knowingly. Hedge-fund underperformance is mostly fees, size and mandate &mdash; none of which bind a small book, which is the whole reason this is worth attempting.</em></p>
+    </div>
+
+    <div class="stages">
+      <div class="stage" data-s="done">
+        <div class="stage-head"><h3>1 &middot; Understand why the last two attempts failed</h3><span class="stage-when">done &middot; 17 Aug</span></div>
+        <p>Both died of the same thing, and it was not bad ideas.</p>
+        <ul>
+          <li><span class="b">&#10003;</span>Diagnosed as statistical power, not idea quality <em>t &asymp; Sharpe &times; &radic;years</em></li>
+          <li><span class="b">&#10003;</span>Consequence accepted: harvest documented effects, never try to discover alpha in real time</li>
+        </ul>
+      </div>
+
+      <div class="stage" data-s="done">
+        <div class="stage-head"><h3>2 &middot; Map everything that moves a price</h3><span class="stage-when">done &middot; 18 Aug</span></div>
+        <p>Built from first principles rather than from what happens to be published, so the gaps are visible.</p>
+        <ul>
+          <li><span class="b">&#10003;</span>173 drivers across six roots, coverage marked</li>
+          <li><span class="b">&#10003;</span>331 published predictors triaged to 30 that survive out-of-sample and are free to build</li>
+        </ul>
+      </div>
+
+      <div class="stage" data-s="done">
+        <div class="stage-head"><h3>3 &middot; Build the data foundation</h3><span class="stage-when">done &middot; 18&ndash;19 Aug</span></div>
+        <p>All free. The paid upgrade was never needed for scoring today&rsquo;s market.</p>
+        <ul>
+          <li><span class="b">&#10003;</span>1.8M fundamental rows, 8,434 companies, from SEC&rsquo;s XBRL frames</li>
+          <li><span class="b">&#10003;</span>6.0M price rows, 3 years, 9,687 tickers</li>
+          <li><span class="b">&#10003;</span>Sector labels for 8,337 tickers from SIC codes</li>
+          <li><span class="b">&#10003;</span>191,440 insider transactions</li>
+        </ul>
+      </div>
+
+      <div class="stage" data-s="done">
+        <div class="stage-head"><h3>4 &middot; Get a score on the board</h3><span class="stage-when">done &middot; 19 Aug</span></div>
+        <p>Ranking works and defends itself. Five bugs were caught by its own sanity gates.</p>
+        <ul>
+          <li><span class="b">&#10003;</span>18 signals, 7 clusters, 2,594 names scored</li>
+          <li><span class="b">&#10003;</span>Ranked inside sector, capped at six per sector in construction</li>
+          <li><span class="b">&#10003;</span>Three lists: Core, Skew, Combined</li>
+        </ul>
+      </div>
+
+      <div class="stage" data-s="now">
+        <div class="stage-head"><h3>5 &middot; Prove what earns its place</h3><span class="stage-when">now</span></div>
+        <p>The turning point. Until this existed, every signal was trusted on someone else&rsquo;s authority. Now a driver has to pass before it goes in &mdash; and after the insider mistake, &ldquo;pass&rdquo; means <b>four tests, not one</b>: alone, in combination, interacting with the composite, and inside subsets where its mechanism says it should be strongest.</p>
+        <ul>
+          <li><span class="b">&#10003;</span>Point-in-time test harness &mdash; rebuilds any signal as it looked on past dates</li>
+          <li><span class="b">&#10003;</span>Read-across validated: 41.4% &rarr; 62.2% hit rate, survives a sector-momentum control</li>
+          <li><span class="b">&#10003;</span>Insider buying tested four ways &mdash; weak alone, mechanism-consistent in small caps, parked pending evidence</li>
+          <li><span class="b">&#10003;</span>Forward record opened: 145 positions, dated and hash-stamped</li>
+          <li><span class="b">&#10003;</span>Re-tested every rejection four ways <em>leverage and insider rescued; buyback, issuance, roaq, cfp confirmed dead</em></li>
+          <li><span class="b">&#10003;</span>Reusable four-test harness + cached point-in-time panel <em>every future driver is now a few minutes to judge</em></li>
+          <li><span class="b">&#10003;</span>Illiquid tilt investigated and rejected <em>the thin-name spread is short-side only; long-only it is the worst bucket, and survivorship makes it worse still</em></li>
+          <li><span class="b">&rarr;</span>Delisting-inclusive prices are now the binding constraint <em>~$100 of Sharadar; every liquidity and small-cap result is untrustworthy without it</em></li>
+          <li><span class="b">&rarr;</span>Open question: the financing cluster runs backwards and now fails all four tests. Still not acted on &mdash; but the case for it is weakening</li>
+        </ul>
+      </div>
+
+      <div class="stage">
+        <div class="stage-head"><h3>6 &middot; Widen the edge</h3><span class="stage-when">next &mdash; weeks</span></div>
+        <p>Now that testing is cheap, add drivers and keep only what passes. 110 mapped drivers are buildable and untouched.</p>
+        <ul>
+          <li><span class="b">&#10003;</span>Recorder automated <em>launchd job, Tue&ndash;Sat</em></li>
+          <li><span class="b">&#10003;</span>Automation failed twice <em>first a dead network on wake; then Yahoo began throttling ~80% of chunks from 25 Aug, turning 20-minute runs into 7.5-hour failures. The job stopped after 28 Aug and five business days were lost before anyone looked.</em></li>
+          <li><span class="b">&#10003;</span>Recorder made self-healing <em>lookback raised 7&rarr;45 days, so a missed week back-fills itself for every name that still exists. Gentler pacing &mdash; 100-ticker chunks 5s apart &mdash; to stay under the throttle.</em></li>
+          <li><span class="b">&#10003;</span>Health check that fails loudly <em>staleness, ticker count and throttle count after every run, and it writes an alert file when something is wrong.</em></li>
+          <li><span class="b">&#10003;</span>Failed a third time; moved off cloud sync <em>21 Sep: the 8 Sep run was throttled for 7 hours and produced nothing, the health check passed it because the previous file was only 2 days old, and from 9 Sep launchd could not execute the script at all &mdash; a machine-wide cloud sync stall had reached this directory. The project moved to a folder outside cloud sync.</em></li>
+          <li><span class="b">&#10003;</span>Recorder halved <em>tradable universe (~5,100 names, $250k+ a day) on weekdays, full roster on Saturdays. Fifty-two chunks instead of 105 &mdash; under the throttle.</em></li>
+          <li><span class="b">&#10003;</span>Health check now demands today&rsquo;s file <em>a run that produced nothing can no longer pass on the strength of yesterday&rsquo;s</em></li>
+          <li><span class="b">&#10003;</span>Batch two: 19 candidates tested, 2 kept <em>asset growth and change in net operating assets, as a new investment cluster</em></li>
+          <li><span class="b">&#10003;</span>Price panel wired to the recorder <em>it had gone 19 days stale and nearly froze a forward record on August prices</em></li>
+          <li><span class="b">&#10003;</span>13F institutional breadth added <em>worthless alone, +7.86% inside composite quintiles; survives a liquidity double-sort at +4.78pp in thin names</em></li>
+          <li><span class="b todo">&middot;</span>Short interest, index add/delete, guidance changes &mdash; each tested before inclusion</li>
+          <li><span class="b todo">&middot;</span>Realisation tax as a real term in the objective <em>commission is assumed zero, so tax and holding period are the whole calculation</em></li>
+          <li><span class="b">&#10003;</span>Holding period measured net of tax <em>edge decays with horizon; monthly&ndash;quarterly beats annual by ~12pp against a 2&ndash;3pp deferral cost. Re-measured 10 Oct on the real objective, after costs and 42% tax: quarterly beats monthly by +2.5pp/yr (positive at all 3 phase offsets) &mdash; a cost and deferral saving, not better signal. Awaiting the owner; forward check registered for 2027-03. Re-measured 12 Oct as an exit rule instead: keep monthly ranking but only sell a name once it drops below rank 80 &mdash; turnover 49% &rarr; 30% per rebalance, +3.1pp/yr after tax vs selling at rank 41, about as good as quarterly without quarterly&rsquo;s timing lottery. Same lever as quarterly (pick one); random books gain too, so it is cost and tax, not signal. Forward check registered for 2027-03</em></li>
+          <li><span class="b">&#10003;</span>Dashboard regenerates itself <em>dashboard.py rewrites the tables and counters from live parquet; the daily job now runs the whole pipeline after each snapshot</em></li>
+        </ul>
+      </div>
+
+      <div class="stage" data-s="now">
+        <div class="stage-head"><h3>7 &middot; Score daily, freeze monthly, size with the record</h3><span class="stage-when">now &mdash; rolling</span></div>
+        <p>Rewritten 21 Sep after the owner called the 1/3/6/12-month plan too slow. That was right: our own horizon test puts the edge at 21&ndash;63 days and at zero by a year, so a yearly check measures nothing. Evaluation is now continuous.</p>
+        <ul>
+          <li><span class="b">&#10003;</span>Daily scoreboard <em>every frozen list marked to market against SPY and QQQ, on the dashboard, regenerated by the daily job</em></li>
+          <li><span class="b">&#10003;</span>Monthly freezes, automatic <em>a new list is frozen whenever the last is 28+ days old</em></li>
+          <li><span class="b">&#10003;</span>Found one that beats the index in-sample <em>value only &mdash; SP, bm, cfp &mdash; 40 names, monthly. +37.0%/yr vs SPY +16.5% over 23 chained months, t=1.68 &mdash; corrected 8 Oct to +22.9% vs +15.6% over 24 months, t=0.68. The book actually live (70% value + 30% skew, cap 6) measured 9 Oct: +20.5%/yr vs +15.6%, t=0.47</em></li>
+          <li><span class="b">&#10003;</span>Screening objective corrected <em>every earlier screen ranked by quintile spread, which rewards a bad bottom decile. Rescreened on the real objective; two of my own promoted signals measured among the worst</em></li>
+          <li><span class="b">&#10003;</span>Survivorship measured, not assumed <em>0.27%/quarter attrition, a drag of at most 0.27pp &mdash; it is not what inflates the result</em></li>
+          <li><span class="b">&#10003;</span>Two agents now run the project <em>a researcher that owns its backlog and picks its own next question, and a watchdog that assumes the pipeline is lying</em></li>
+          <li><span class="b">&rarr;</span>Pipeline moved off the Mac onto GitHub&rsquo;s servers <em>6 Oct: a local machine is not a reliable scheduler, so the snapshot, the health check, the freeze and the scoreboard now run on a stateless cloud runner. Three attempts died one missing file at a time &mdash; a pip cache with no lockfile, a price panel that only ever appended, and a fundamentals file that turned out never to have had a build script. The fourth run is still going.</em></li>
+          <li><span class="b">&#10003;</span>Daily and monthly reporting <em>written by the watchdog and the monthly agent to a private notes workspace. A cloud runner cannot republish this dashboard, so those reports are what is current between watchdog runs.</em></li>
+          <li><span class="b">&#10003;</span>Liquidity floor tested <em>edge +1.46%/mo at $0.5m, +0.06% at $10m, +0.57% at $50m &mdash; it lives in thin names; $10m-floor forward threshold registered</em></li>
+          <li><span class="b">&#10003;</span>Thin-name trading costs estimated <em>5 Oct: spreads cost ~0.13%/mo at the $0.5m floor (+0.13% impact at a notional $1m book), so net edge is ~+1.3%/mo against ~+1.2% at $2m. Spreads would need to average 1.06% a side before the floor stops paying &mdash; costs do not explain the thin-name edge; luck still might</em></li>
+          <li><span class="b">&#10003;</span>Pipeline calibrated against OSAP&rsquo;s published returns <em>8 Oct: the price pipeline passes (short-term reversal tracks OSAP at 0.82, best match of 198 signals). Fundamentals fail as registered: our book-to-market long-short earned +7.2%/month against OSAP&rsquo;s +0.2%, because split-adjusted prices leaked future splits into market cap. With that fixed, cash-flow-to-price matches (0.82, rank 5 of 198), sales-to-price nearly (0.54), book-to-market not (0.06)</em></li>
+          <li><span class="b">!</span>Live cfp is not trailing cash flow <em>8 Oct: 10-Q cash-flow statements are year-to-date, so 99% of the &ldquo;trailing four quarters&rdquo; the live build sums are the same quarter from four different years. Rank correlation with real annual cash flow is 0.69, and 16% of names flip sign. Computing it correctly would change 15 of the 40 live names. Not fixed &mdash; changing the live book is the owner&rsquo;s call</em></li>
+          <li><span class="b">!</span>Sector-relative ranking tested against market-wide <em>11 Oct: on the value book, ranking across the whole market beat ranking inside sectors by +0.52%/mo over 24 months (t 1.56; +0.47%/mo, t 1.23 pool-matched). Registered verdict &ldquo;belief broken&rdquo; but fragile; the gain comes from dropping the cheapest names in expensive sectors (tech, utilities, biotech). Not acted on &mdash; forward check registered for 2027-03. The 8-per-sector cap never binds on the value book</em></li>
+          <li><span class="b">&rarr;</span>Expect 4&ndash;5pp a year, not 20 <em>the measured edge is 4x the documented value premium; treat the excess as selection until forward evidence says otherwise</em></li>
+          
+          <li><span class="b">&rarr;</span>Real money as a funded experiment, at a size the owner sets <em>buying information, not buying a proven edge &mdash; and it should be called that</em></li>
+          <li><span class="b todo">&middot;</span>Scale the allocation as the scoreboard earns it <em>a dozen monthly observations is roughly where luck and edge separate</em></li>
+          <li><span class="b todo">&middot;</span>Archetype work where sector ranking is not enough &mdash; pre-revenue biotech, REITs, miners</li>
+        </ul>
+      </div>
+
+      <div class="stage">
+        <div class="stage-head"><h3>8 &middot; What cannot be sped up</h3><span class="stage-when">the constraint</span></div>
+        <p>One month of one list is one observation. A 40-name list moves &plusmn;5&ndash;8% a quarter on noise. Distinguishing a real +1&ndash;2% monthly edge from that takes roughly twelve to eighteen freezes &mdash; a year to a year and a half of calendar time, and no amount of engineering shortens it. Everything in stage 7 makes that wait visible and productive; nothing removes it.</p>
+        <ul>
+          <li><span class="b todo">&middot;</span>Position count floors near 40 because the payoff shape demands it, not from caution</li>
+          <li><span class="b todo">&middot;</span>Exit discipline on losers &mdash; a first-order return driver at this payoff shape, not risk hygiene</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="cols">
+      <div class="card">
+        <h3>What governs the pace</h3>
+        <ul>
+          <li><b>Evidence takes calendar time</b><em>A real edge needs years to separate from luck. Nothing in stages 6&ndash;8 removes that; it only makes each year count for more.</em></li>
+          <li><b>Every driver is cheap to test, but rejection is the expensive mistake</b><em>Insider buying took an hour to build, ten minutes to wrongly reject, and one question from the owner to reopen. A signal worth 0.02 IC alone can still earn its place in a blend &mdash; which is precisely the error that killed the previous loop.</em></li>
+          <li><b>Drivers buy independent bets, not certainty</b><em>Read-across is among the strongest signals in this literature and it hits 62%. Twenty genuinely independent signals at 55% beat one at 62%.</em></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>What would change the plan</h3>
+        <ul>
+          <li><b>The financing cluster resolving either way</b><em>If it is decay rather than regime, the Core list loses its backbone and value work has to be rebuilt.</em></li>
+          <li><b>The forward record disagreeing with the design</b><em>That is what it is for. It should be allowed to overturn things.</em></li>
+          <li><b>Paid data has become the binding constraint</b><em>Raised from low priority. Every result touching thin or small names is measured on survivors only, and the illiquid investigation showed how far that can move a number &mdash; +4.05% to &minus;0.15% on a 5% failure rate.</em></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FINDINGS ================= -->
+  <section class="panel" data-p="findings">
+    <p class="lede" style="margin-bottom:26px;">The research record: every signal tested, what survived, and what was thrown out. Kept because the rejections carry as much information as the acceptances &mdash; and because a claim with no test behind it should be visible as such.</p>
+    <p class="lede">Started from a published catalog rather than a blank page &mdash; 331 predictors with monthly returns through 2024, so the out-of-sample test on every one of them had already run. We measured decay instead of trusting papers.</p>
+
+    <section>
+      <h2>Triage</h2>
+      <div class="funnel">
+        <div class="fstep"><b>331</b><span>Catalog entries</span><i style="width:100%"></i></div>
+        <div class="fstep"><b>212</b><span>Actual predictors, not placebos</span><i style="width:64%"></i></div>
+        <div class="fstep"><b>185</b><span>Buildable on free data</span><i style="width:56%"></i></div>
+        <div class="fstep" data-tone="brass"><b>46</b><span>Still working since 2011</span><i style="width:14%"></i></div>
+        <div class="fstep" data-tone="brass"><b>33</b><span>Also worked 2002&ndash;2012 &mdash; not regime-fitted</span><i style="width:10%"></i></div>
+        <div class="fstep" data-tone="done"><b>30</b><span>Long-only usable &mdash; now being built</span><i style="width:9%"></i></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>What survived</h2>
+      <div class="cols">
+        <div class="card">
+          <h3>One dominant bet</h3>
+          <ul>
+            <li><b>Eight signals, one idea</b><em>NetPayoutYield, XFIN, ShareIss1Y/5Y, NetEquityFinance, roaq, OScore, cfp. They correlate above 0.55 and move together: companies that fund themselves and hand cash back beat companies that need to keep raising money.</em></li>
+            <li><b>Ten of eleven rebalance annually</b><em>Which lands exactly on the turnover and tax constraint. That is a result, not an assumption.</em></li>
+            <li><b>Four credible standalone signals</b><em>EarningsStreak (t=4.7, strongest in the catalog), VolumeTrend, AnnouncementReturn, FirmAgeMom.</em></li>
+            <li><b>Sixteen probable coincidences</b><em>Single indicators with t just above 2. Roughly eleven of the survivors are false positives by chance, and this is where they live.</em></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>What got cut, including my own work</h3>
+          <ul>
+            <li><b>Median decay 0.47</b><em>Half of a published premium disappears after publication &mdash; matching the catalog authors&rsquo; own finding, which is good evidence the pipeline is right.</em></li>
+            <li><b>The catalog is old</b><em>Median sample ends 2001. Every original t-stat is 25 years stale.</em></li>
+            <li><b>Thirteen were regime-fitted</b><em>They only worked 2013&ndash;2024. Filtering on &ldquo;what worked recently&rdquo; selects for one regime, so I tested my own filter for exactly that.</em></li>
+            <li><b>GP and OperProfRD failed it</b><em>They looked like the best finds &mdash; they performed <em>better</em> after publication. That was the post-2009 quality regime, not durability. Dropped.</em></li>
+            <li><b>Two clusters need shorting</b><em>The catalog reports long&ndash;short returns; we can only go long. One printed +81%/yr, which is a tell rather than an opportunity.</em></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Extreme-winner study &mdash; measured, then blocked</h2>
+      <div class="card">
+        <div class="strip" style="margin:0 0 16px;">
+          <div><b>12,400</b><span>Tickers, Jun 2021</span></div>
+          <div data-tone="brass"><b>57.7%</b><span>Gone by 2026</span></div>
+          <div><b>18%</b><span>Still on Yahoo</span></div>
+          <div data-tone="brass"><b>~$100</b><span>Cost to unblock</span></div>
+        </div>
+        <p class="note">Sampled 200 of the vanished names: Yahoo serves 2021 history for 37. A free-data study would see nearly every survivor and about a fifth of the disappeared &mdash; that is not a bias to correct for, it is the dependent variable going missing. Sharadar at ~$49/mo, two months, bulk-pull, cancel.</p>
+        <p class="note" style="margin-top:12px;"><b>But it does not block the live score.</b> Survivorship corrupts backtests of the past, not the ranking of today&rsquo;s cross-section &mdash; you can only buy what exists. That is what let this build go ahead on free data.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>First test on our own data</h2>
+      <p class="lede" style="margin-bottom:18px;">Every signal except read-across was inherited on the published catalog&rsquo;s authority and had never been measured here. Rebuilt point-in-time at ten quarterly dates &mdash; using only filings already filed by each date &mdash; then sorted into sector-relative quintiles and held 63 trading days.</p>
+      <div class="listbox">
+        <h3>Quintile spread, best minus worst</h3>
+        <p class="sub">Mono counts how many of the four quintile steps move the right way. Win is the share of the ten dates with a positive spread.</p>
+        <div class="tw"><table><thead><tr><th>Signal</th><th class="r">Q5&minus;Q1</th><th class="r">Mono</th><th class="r">Win</th><th>Verdict</th></tr></thead><tbody>
+<tr><td class="tk">mom_12_1</td><td class="r sc" style="color:var(--done)">+3.98%</td><td class="r">4/4</td><td class="r">80%</td><td style="color:var(--done);font-family:var(--mono);font-size:12px">pass</td></tr>
+<tr><td class="tk">SP</td><td class="r sc" style="color:var(--ink-soft)">+2.63%</td><td class="r">2/4</td><td class="r">80%</td><td style="color:var(--ink-soft);font-family:var(--mono);font-size:12px">weak</td></tr>
+<tr><td class="tk">bm</td><td class="r sc" style="color:var(--done)">+2.40%</td><td class="r">3/4</td><td class="r">70%</td><td style="color:var(--done);font-family:var(--mono);font-size:12px">pass</td></tr>
+<tr><td class="tk">px_52w</td><td class="r sc" style="color:var(--done)">+2.18%</td><td class="r">4/4</td><td class="r">60%</td><td style="color:var(--done);font-family:var(--mono);font-size:12px">pass</td></tr>
+<tr><td class="tk">PctTotAcc</td><td class="r sc" style="color:var(--ink-soft)">+1.20%</td><td class="r">3/4</td><td class="r">50%</td><td style="color:var(--ink-soft);font-family:var(--mono);font-size:12px">weak</td></tr>
+<tr><td class="tk">leverage</td><td class="r sc" style="color:var(--ink-faint)">+0.17%</td><td class="r">2/4</td><td class="r">60%</td><td style="color:var(--ink-faint);font-family:var(--mono);font-size:12px">flat</td></tr>
+<tr><td class="tk">roaq</td><td class="r sc" style="color:var(--open)">&minus;0.85%</td><td class="r">1/4</td><td class="r">60%</td><td style="color:var(--open);font-family:var(--mono);font-size:12px">fail</td></tr>
+<tr><td class="tk">vol_60d</td><td class="r sc" style="color:var(--open)">&minus;1.01%</td><td class="r">1/4</td><td class="r">60%</td><td style="color:var(--open);font-family:var(--mono);font-size:12px">fail</td></tr>
+<tr><td class="tk">cfp</td><td class="r sc" style="color:var(--open)">&minus;1.88%</td><td class="r">2/4</td><td class="r">50%</td><td style="color:var(--open);font-family:var(--mono);font-size:12px">fail</td></tr>
+<tr><td class="tk">buyback</td><td class="r sc" style="color:var(--open)">&minus;2.82%</td><td class="r">1/4</td><td class="r">12%</td><td style="color:var(--open);font-family:var(--mono);font-size:12px">fail</td></tr>
+<tr><td class="tk">issuance</td><td class="r sc" style="color:var(--open)">&minus;3.51%</td><td class="r">1/4</td><td class="r">25%</td><td style="color:var(--open);font-family:var(--mono);font-size:12px">fail</td></tr>
+        </tbody></table></div>
+      </div>
+      <p class="note"><b>The financing cluster is inverted here.</b> Buybacks at &minus;2.82% with a 12% win rate, share issuance at &minus;3.51% with 25% &mdash; companies raising equity <em>beat</em> companies returning capital, the opposite of what the triage called its most robust finding. Over 2023&ndash;2026 that is what an AI and growth boom looks like, and it is also what post-publication decay looks like. This data cannot tell the two apart.</p>
+      <p class="note" style="margin-top:12px;"><b>Nothing has been reweighted on this.</b> Ten overlapping observations is far below the bar to overrule 25 years of published evidence, and fitting weights to it would be the exact overfitting this project was built to avoid. It is recorded as the open question it is.</p>
+      <p class="note" style="margin-top:12px;"><b>The first rejection was made the wrong way, and the owner caught it.</b> Insider buying was tested alone &mdash; a +0.31% quintile spread, 50% win rate &mdash; and dismissed. But testing a signal in isolation is the exact pass/fail-per-signal gating this project diagnosed as fatal in the old loop: it discards anything with an IC of 0.02&ndash;0.05, which is worthless alone and valuable inside a blend.</p>
+      <p class="note" style="margin-top:12px;"><b>Retested in combination, it is weak rather than absent.</b> Added to the composite at a 10% weight it lifts the spread from +4.83% to +5.00%, and heavier weights are worse. Inside composite quintiles it helps in the middle and hurts at both ends. The one result with a mechanism behind it: <b>+1.10pp in the least liquid half of the market against &minus;0.37pp in the most liquid</b> &mdash; insiders should know most where nobody else is looking, and that is where it shows up.</p>
+      <p class="note" style="margin-top:12px;"><b>Still not added.</b> A +0.17pp gain across six dates is noise, and fitting to it would repeat the mistake being avoided with the financing cluster. Verdict moved from <em>rejected</em> to <em>conditionally promising, insufficient evidence</em> &mdash; and every driver from here gets all four tests, not just the univariate one.</p>
+      <p class="note" style="margin-top:12px;"><b>Momentum, book-to-market and the 52-week high pass both tests.</b> They survived the catalog triage and they hold up here &mdash; the only signals with evidence from two independent directions.</p>
+      <p class="note" style="margin-top:12px;"><b>And the spreads above are optimistic.</b> The price panel holds only surviving companies, so failures are missing from the bottom quintile. Every negative number is worse than it looks, not better.</p>
+    </section>
+
+    <section>
+      <h2>Four-test re-evaluation</h2>
+      <p class="lede" style="margin-bottom:18px;">Every signal rejected on a solo test got three more: does it improve the composite, does it separate names inside composite quintiles, and does it work where its mechanism says it should. A signal has to pass only one to be worth carrying.</p>
+      <div class="listbox">
+        <h3>All signals, four ways</h3>
+        <p class="sub">Baseline composite spread is +3.82%. &ldquo;Blend&rdquo; is the change from adding that signal at 10% weight. Last two columns split the market by liquidity.</p>
+        <div class="tw"><table><thead><tr><th>Signal</th><th class="r">Alone</th><th class="r">Blend &Delta;</th><th class="r">Illiquid half</th><th class="r">Liquid half</th><th>Verdict</th></tr></thead><tbody>
+<tr><td class="tk">leverage</td><td class="r">+0.17%</td><td class="r sc">+0.41%</td><td class="r" style="color:var(--done)">+2.03%</td><td class="r" style="color:var(--ink-faint)">&minus;1.17%</td><td style="color:var(--brass);font-family:var(--mono);font-size:12px">rescued</td></tr>
+<tr><td class="tk">insider</td><td class="r">+0.49%</td><td class="r sc">+0.39%</td><td class="r" style="color:var(--done)">+1.72%</td><td class="r" style="color:var(--ink-faint)">&minus;0.60%</td><td style="color:var(--brass);font-family:var(--mono);font-size:12px">rescued</td></tr>
+<tr><td class="tk">bm</td><td class="r">+3.71%</td><td class="r sc">+0.04%</td><td class="r" style="color:var(--done)">+4.94%</td><td class="r" style="color:var(--ink-faint)">+0.81%</td><td style="color:var(--done);font-family:var(--mono);font-size:12px">in</td></tr>
+<tr><td class="tk">SP</td><td class="r">+3.58%</td><td class="r sc">&minus;0.00%</td><td class="r" style="color:var(--done)">+3.33%</td><td class="r" style="color:var(--ink-faint)">+1.21%</td><td style="color:var(--done);font-family:var(--mono);font-size:12px">in</td></tr>
+<tr><td class="tk">px_52w</td><td class="r">+2.35%</td><td class="r sc">&minus;0.10%</td><td class="r" style="color:var(--done)">+2.87%</td><td class="r" style="color:var(--ink-faint)">+0.58%</td><td style="color:var(--done);font-family:var(--mono);font-size:12px">in</td></tr>
+<tr><td class="tk">mom_12_1</td><td class="r">+1.98%</td><td class="r sc">+0.18%</td><td class="r" style="color:var(--done)">+1.30%</td><td class="r" style="color:var(--ink-faint)">+1.73%</td><td style="color:var(--done);font-family:var(--mono);font-size:12px">in</td></tr>
+<tr><td class="tk">vol_60d</td><td class="r">&minus;0.81%</td><td class="r sc">&minus;0.28%</td><td class="r" style="color:var(--done)">+2.30%</td><td class="r" style="color:var(--ink-faint)">&minus;3.67%</td><td style="color:var(--ink-soft);font-family:var(--mono);font-size:12px">watch</td></tr>
+<tr><td class="tk">PctTotAcc</td><td class="r">+0.48%</td><td class="r sc">+0.20%</td><td class="r" style="color:var(--done)">+0.45%</td><td class="r" style="color:var(--ink-faint)">&minus;0.60%</td><td style="color:var(--open);font-family:var(--mono);font-size:12px">drop</td></tr>
+<tr><td class="tk">issuance</td><td class="r">&minus;1.04%</td><td class="r sc">+0.02%</td><td class="r" style="color:var(--done)">&minus;0.04%</td><td class="r" style="color:var(--ink-faint)">&minus;0.69%</td><td style="color:var(--open);font-family:var(--mono);font-size:12px">drop</td></tr>
+<tr><td class="tk">cfp</td><td class="r">&minus;0.85%</td><td class="r sc">&minus;0.44%</td><td class="r" style="color:var(--done)">+0.02%</td><td class="r" style="color:var(--ink-faint)">&minus;0.59%</td><td style="color:var(--open);font-family:var(--mono);font-size:12px">drop</td></tr>
+<tr><td class="tk">roaq</td><td class="r">&minus;1.35%</td><td class="r sc">&minus;0.49%</td><td class="r" style="color:var(--done)">+0.17%</td><td class="r" style="color:var(--ink-faint)">&minus;1.98%</td><td style="color:var(--open);font-family:var(--mono);font-size:12px">drop</td></tr>
+<tr><td class="tk">buyback</td><td class="r">&minus;1.43%</td><td class="r sc">&minus;0.02%</td><td class="r" style="color:var(--done)">&minus;2.50%</td><td class="r" style="color:var(--ink-faint)">+0.18%</td><td style="color:var(--open);font-family:var(--mono);font-size:12px">drop</td></tr>
+        </tbody></table></div>
+      </div>
+      <p class="note"><b>Two signals came back from the dead.</b> Leverage contributes nothing alone (+0.17%) but adds the most of anything to the blend (+0.41%) and returns +2.03% in the illiquid half. Insider buying behaves the same way. Both were discarded by the solo screen; both earn a place under a proper one.</p>
+      <p class="note" style="margin-top:12px;"><b>The financing pair is now decisively dead, not merely doubtful.</b> Buybacks fail all four tests &mdash; &minus;1.43% alone, nothing added to the blend, &minus;1.21% inside composite quintiles, &minus;2.50% in illiquid names. Share issuance adds a flat +0.02%. Whatever the catalog measured over 25 years is not present in this market, in any combination, anywhere in the liquidity spectrum.</p>
+      <p class="note" style="margin-top:12px;"><b>The real find is structural: the edge lives in the illiquid half.</b> Book-to-market returns +4.94% among thinly traded names against +0.81% among liquid ones. The same split shows up in leverage, insider buying, the 52-week high and volatility. That is the attention mechanism in plain sight &mdash; mispricing survives where nobody is looking &mdash; and it says more about where to fish than any individual signal does.</p>
+      <p class="note" style="margin-top:12px;"><b>Nothing has been reweighted.</b> Seven dates cannot justify adding leverage and insider any more than ten could justify dropping the financing cluster. Same standard both directions. Recorded, not acted on.</p>
+    </section>
+
+    <section>
+      <h2>Driver batch two &mdash; nineteen tested, two kept</h2>
+      <p class="lede" style="margin-bottom:18px;">Five new families built from filings already on hand: investment and asset growth, profitability quality, distress scores, accounting red flags, and the Piotroski F-score. Every one went through the four-test screen before being allowed near the composite.</p>
+      <div class="strip" style="margin:0 0 18px;">
+        <div><b>19</b><span>Candidates tested</span></div>
+        <div data-tone="done"><b>2</b><span>Added</span></div>
+        <div data-tone="brass"><b>7</b><span>Held for evidence</span></div>
+        <div><b>4</b><span>Dropped on coverage</span></div>
+      </div>
+      <p class="note"><b>Two earned a place: asset growth and the change in net operating assets.</b> Companies that expand their asset base fastest go on to underperform &mdash; documented since 2004 and 2008, and confirmed here (+1.20% and +1.61% alone, positive on interaction and in thin names). They meet the standard already set for momentum, book-to-market and the 52-week high: evidence from the published record <em>and</em> from our own data. Nothing else cleared both bars, so nothing else went in.</p>
+      <p class="note" style="margin-top:12px;"><b>Four were unusable on coverage, including the whole F-score.</b> Altman Z reached 302 names, Ohlson O 455, the nine-part Piotroski score just 68 &mdash; it needs all nine components present simultaneously and XBRL rarely obliges. A signal covering 300 names does not rank a market of 2,600; it silently redefines it.</p>
+      <p class="note" style="margin-top:12px;"><b>And a regime finding that is not a bug.</b> Every profitability measure came out negative &mdash; gross profitability &minus;4.31%, operating margin &minus;1.83%, ROIC &minus;1.05%, and separately roaq &minus;1.35% and cfp &minus;0.85% from independent code. Six measures, two implementations, same direction, while value ran +3.71% and +3.58%. Profitability genuinely lost money over 2024&ndash;2026. It is the same story as the financing cluster, and it says this window favoured cheap and rising over merely profitable.</p>
+    </section>
+
+    <section>
+      <h2>Institutional breadth &mdash; the clearest case yet for testing in combination</h2>
+      <p class="lede" style="margin-bottom:18px;">Six quarters of Form 13F, three million positions a quarter. Holdings are keyed by CUSIP and no free CUSIP map exists, so issuer names are normalised and matched against the SEC roster &mdash; a 50% hit rate, measured rather than assumed. The rest are foreign issuers, bonds and private funds.</p>
+      <div class="listbox">
+        <h3>Number of institutions holding the stock</h3>
+        <p class="sub">Baseline composite spread is +3.82%. The signal is breadth, not dollars held &mdash; dollar value is mostly a proxy for market cap.</p>
+        <div class="tw"><table><thead><tr><th>Signal</th><th class="r">Alone</th><th class="r">Blend &Delta;</th><th class="r">Inside quintiles</th><th class="r">Thin names</th></tr></thead><tbody>
+<tr><td class="tk">inst_holders</td><td class="r">+0.42%</td><td class="r">&minus;0.02%</td><td class="r sc">+7.86%</td><td class="r" style="color:var(--done)">+9.92%</td></tr>
+<tr><td class="tk">inst_d_holders</td><td class="r">+0.00%</td><td class="r">+0.04%</td><td class="r sc">+4.81%</td><td class="r" style="color:var(--done)">+5.86%</td></tr>
+<tr><td class="tk">inst_d_shares</td><td class="r">+0.70%</td><td class="r">+0.28%</td><td class="r sc">+4.60%</td><td class="r" style="color:var(--done)">+4.36%</td></tr>
+        </tbody></table></div>
+      </div>
+      <p class="note"><b>Nearly zero alone, the largest interaction of anything tested.</b> A univariate screen would have thrown all three away without a second look &mdash; which is exactly the mistake made with insider buying, and exactly what the owner flagged.</p>
+      <p class="note" style="margin-top:12px;"><b>Then the obvious objection: is it just size?</b> Institutions cluster in big companies, and median dollar volume runs from $6.8m in the lowest holder quintile to $198m in the highest. Ranked <em>within</em> liquidity terciles the effect is <b>+4.78pp in thin names, +2.26pp in mid, &minus;0.48pp in liquid</b> &mdash; a clean monotone gradient, correlation with dollar volume only +0.34. It survives the control, and the direction is the one the mechanism predicts: institutional attention is worth most where there is least of it.</p>
+      <p class="note" style="margin-top:12px;"><b>Added, on the same two-source standard as everything else.</b> Documented since Chen, Hong and Stein in 2002, and confirmed here. Seven dates and coverage only broad from late 2024, so it is thin &mdash; and it tilts the book larger, moving the top-40 median market cap from $1.9bn to $6.0bn. Worth watching.</p>
+    </section>
+
+    <section>
+      <h2>The illiquid tilt &mdash; investigated, and it does not survive</h2>
+      <p class="lede" style="margin-bottom:18px;">The four-test run suggested the edge concentrated in thinly traded names, and that we might be filtering away the best part of the market. Split five ways instead of two, it falls apart.</p>
+      <div class="listbox">
+        <h3>By liquidity quintile</h3>
+        <p class="sub">Spread is what a long-short book would earn. Top quintile is what a long-only book actually gets.</p>
+        <div class="tw"><table><thead><tr><th>Bucket</th><th class="r">Median $/day</th><th class="r">Spread</th><th class="r">Top quintile</th><th class="r">Bottom quintile</th></tr></thead><tbody>
+<tr><td class="tk">Q1 thinnest</td><td class="r">$1.1m</td><td class="r">+10.34%</td><td class="r sc">+4.05%</td><td class="r" style="color:var(--open)">&minus;6.29%</td></tr>
+<tr><td class="tk">Q2</td><td class="r">$4.7m</td><td class="r">+1.19%</td><td class="r sc">+4.63%</td><td class="r" style="color:var(--open)">+3.44%</td></tr>
+<tr><td class="tk">Q3</td><td class="r">$17.3m</td><td class="r">+3.35%</td><td class="r sc"><b>+6.89%</b></td><td class="r" style="color:var(--open)">+3.54%</td></tr>
+<tr><td class="tk">Q4</td><td class="r">$57.2m</td><td class="r">+1.06%</td><td class="r sc">+5.26%</td><td class="r" style="color:var(--open)">+4.20%</td></tr>
+<tr><td class="tk">Q5 most liquid</td><td class="r">$256.8m</td><td class="r">+2.86%</td><td class="r sc">+6.19%</td><td class="r" style="color:var(--open)">+3.33%</td></tr>
+        </tbody></table></div>
+      </div>
+      <p class="note"><b>The spread in thin names is real and useless.</b> Q1&rsquo;s +10.34% comes almost entirely from its bottom quintile falling &minus;6.29%, not from its top performing. Harvesting it requires shorting, which is not available here. Long-only, the thinnest bucket returns <b>+4.05% &mdash; the worst of all five</b>, against +6.89% in the middle and +6.19% in the most liquid.</p>
+      <p class="note" style="margin-top:12px;"><b>And that +4.05% is measured on survivors only.</b> Yahoo purges delisted symbols outright, so a company that failed is absent from every date rather than just the ones after it failed &mdash; 6,025 of the 10,395 names on the SEC roster never appear in this panel at all. A 5% failure rate at &minus;80% takes the thin bucket&rsquo;s top quintile to <b>&minus;0.15%</b>. Failures are concentrated exactly there.</p>
+      <p class="note" style="margin-top:12px;"><b>Correction to the previous conclusion.</b> &ldquo;The edge lives in the illiquid half&rdquo; was right about the spread and wrong about the money. The $500k floor is not cutting off the profitable region &mdash; it is holding the line in front of it.</p>
+      <p class="note" style="margin-top:12px;"><b>One thing that did hold: size is not a constraint here.</b> Even the thinnest bucket supports $107k a day at 10% of volume, and a notional $1m book at 40 names needs $25k positions. The capacity advantage over a fund is real &mdash; it just is not where this particular edge was supposed to be.</p>
+    </section>
+
+    <section>
+      <h2>Who works on this, and what they may not do</h2>
+      <p class="lede" style="margin-bottom:18px;">The owner&rsquo;s point on 30 Sep: the existing scheduled jobs are cron with a fixed prompt &mdash; the clock chooses when, and the work was chosen months ago. An agent picks its own next action. The difference is a backlog the agent owns.</p>
+      <div class="cols">
+        <div class="card">
+          <h3>Researcher &mdash; Mondays and Thursdays</h3>
+          <ul>
+            <li><b>Chooses its own work</b><em>Reads <code>BACKLOG.md</code>, takes the highest-value actionable item, does it, records the result and re-ranks. Prefers the test that could invalidate a belief over the one that could confirm it.</em></li>
+            <li><b>Cannot promote anything</b><em>May register a threshold; may never move one. Nothing enters the book without published evidence, our own data, and forward confirmation at a threshold set before that data existed.</em></li>
+            <li><b>Silent unless it matters</b><em>Notifies only when a pre-registered hypothesis confirms, or when a current belief turns out wrong in a way that changes the book.</em></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Watchdog &mdash; every weekday morning</h3>
+          <ul>
+            <li><b>Assumes the pipeline is lying</b><em>It has failed silently four times &mdash; a network-dead run that exited 0, eight days of throttling that passed the health check, a cloud sync stall, and a smoke test that overwrote a day with 39 tickers. Every one looked fine from outside.</em></li>
+            <li><b>Names the mega-caps out loud</b><em>Microsoft, Alphabet, Meta and Tesla have each gone silently missing, every time found only because someone asked for one by name. That check is now standing.</em></li>
+            <li><b>Republishes the dashboard</b><em>Cron cannot. This is most of why it exists.</em></li>
+          </ul>
+        </div>
+      </div>
+      <p class="note" style="margin-top:18px;"><b>Why self-direction is fenced.</b> The screen certifies 10% of pure noise. An agent free to pick its own research and promote its own findings would produce a confident false discovery roughly weekly &mdash; which is exactly how the previous loop generated dozens of candidates and dropped nearly all of them. The backlog lets it choose what to study; the two-source rule and pre-registered thresholds stop it choosing what to believe.</p>
+    </section>
+
+    <section>
+      <h2>The strategy &mdash; 24 months, rebalanced monthly (corrected 8 Oct)</h2>
+      <p class="lede" style="margin-bottom:18px;">Not a snapshot test this time. Forty names ranked on sales-to-price, book-to-market and cash-flow-to-price, rebalanced every month, returns chained across 23 consecutive months. The quarterly tests measured seven scattered windows and then annualised by compounding &mdash; an extrapolation. This is the thing actually run.</p>
+      <div class="strip" style="margin:0 0 18px;">
+        <div data-tone="done"><b>+22.9%</b><span>Book, per year</span></div>
+        <div><b>+15.6%</b><span>SPY, per year</span></div>
+        <div data-tone="brass"><b>+7.3pp</b><span>Edge</span></div>
+        <div><b>62%</b><span>Months ahead</span></div>
+        <div><b>0.68</b><span>t-statistic</span></div>
+        <div><b>~8</b><span>Trades a month</span></div>
+      </div>
+      <div class="listbox">
+        <h3>Month by month &mdash; as first published</h3>
+        <p class="sub">The original series (+37.0%/yr, t=1.68, 23 months), kept for the record. It is superseded by the corrected numbers above; see the note below the table.</p>
+        <div class="tw"><table><thead><tr><th>Month</th><th class="r">Book</th><th class="r">SPY</th><th class="r">Edge</th></tr></thead><tbody>
+<tr><td class="tk">2024-09</td><td class="r">-0.59%</td><td class="r">+1.09%</td><td class="r sc" style="color:var(--open)">-1.67%</td></tr>
+<tr><td class="tk">2024-10</td><td class="r">+19.54%</td><td class="r">+5.96%</td><td class="r sc" style="color:var(--done)">+13.57%</td></tr>
+<tr><td class="tk">2024-11</td><td class="r">+1.95%</td><td class="r">-2.05%</td><td class="r sc" style="color:var(--done)">+4.00%</td></tr>
+<tr><td class="tk">2024-12</td><td class="r">+9.41%</td><td class="r">+3.24%</td><td class="r sc" style="color:var(--done)">+6.18%</td></tr>
+<tr><td class="tk">2025-01</td><td class="r">-4.02%</td><td class="r">-3.00%</td><td class="r sc" style="color:var(--open)">-1.02%</td></tr>
+<tr><td class="tk">2025-02</td><td class="r">-3.28%</td><td class="r">-5.57%</td><td class="r sc" style="color:var(--done)">+2.29%</td></tr>
+<tr><td class="tk">2025-03</td><td class="r">-2.87%</td><td class="r">-0.87%</td><td class="r sc" style="color:var(--open)">-2.00%</td></tr>
+<tr><td class="tk">2025-04</td><td class="r">+6.97%</td><td class="r">+6.28%</td><td class="r sc" style="color:var(--done)">+0.68%</td></tr>
+<tr><td class="tk">2025-05</td><td class="r">+8.58%</td><td class="r">+5.14%</td><td class="r sc" style="color:var(--done)">+3.44%</td></tr>
+<tr><td class="tk">2025-06</td><td class="r">+2.03%</td><td class="r">+2.69%</td><td class="r sc" style="color:var(--open)">-0.66%</td></tr>
+<tr><td class="tk">2025-07</td><td class="r">+9.38%</td><td class="r">+2.05%</td><td class="r sc" style="color:var(--done)">+7.33%</td></tr>
+<tr><td class="tk">2025-09</td><td class="r">+2.53%</td><td class="r">+4.81%</td><td class="r sc" style="color:var(--open)">-2.28%</td></tr>
+<tr><td class="tk">2025-09</td><td class="r">-3.63%</td><td class="r">+2.05%</td><td class="r sc" style="color:var(--open)">-5.68%</td></tr>
+<tr><td class="tk">2025-10</td><td class="r">+3.37%</td><td class="r">-0.26%</td><td class="r sc" style="color:var(--done)">+3.64%</td></tr>
+<tr><td class="tk">2025-12</td><td class="r">-1.70%</td><td class="r">+0.54%</td><td class="r sc" style="color:var(--open)">-2.24%</td></tr>
+<tr><td class="tk">2025-12</td><td class="r">+5.48%</td><td class="r">+1.47%</td><td class="r sc" style="color:var(--done)">+4.00%</td></tr>
+<tr><td class="tk">2026-01</td><td class="r">-2.77%</td><td class="r">-0.81%</td><td class="r sc" style="color:var(--open)">-1.96%</td></tr>
+<tr><td class="tk">2026-02</td><td class="r">-4.61%</td><td class="r">-7.62%</td><td class="r sc" style="color:var(--done)">+3.01%</td></tr>
+<tr><td class="tk">2026-03</td><td class="r">+12.75%</td><td class="r">+10.51%</td><td class="r sc" style="color:var(--done)">+2.25%</td></tr>
+<tr><td class="tk">2026-04</td><td class="r">+2.25%</td><td class="r">+5.26%</td><td class="r sc" style="color:var(--open)">-3.02%</td></tr>
+<tr><td class="tk">2026-06</td><td class="r">+1.39%</td><td class="r">-1.43%</td><td class="r sc" style="color:var(--done)">+2.82%</td></tr>
+<tr><td class="tk">2026-06</td><td class="r">+2.14%</td><td class="r">-0.68%</td><td class="r sc" style="color:var(--done)">+2.82%</td></tr>
+<tr><td class="tk">2026-07</td><td class="r">+0.69%</td><td class="r">+2.43%</td><td class="r sc" style="color:var(--open)">-1.74%</td></tr>
+        </tbody></table></div>
+      </div>
+      <p class="note"><b>After tax, over five years: 2.65x against the index at 1.66x.</b> The book turns over 20% a month so gains realise yearly at 42%; the index compounds untaxed and pays once at exit. Even with that handicap the gap holds &mdash; 1.59x the index position.</p>
+      <p class="note" style="margin-top:12px;"><b>It does not hang on one month.</b> Removing the best (Oct 2024, +13.6% edge) leaves +26.1% against +13.6% &mdash; a 12.5pp edge, t falling from 1.68 to 1.29. Worst month &minus;4.6%, worst three months &minus;9.8%, correlation with SPY 0.72.</p>
+      <p class="note" style="margin-top:12px;"><b>And the reasons to distrust it, which are serious.</b> t = 1.68 is not significant &mdash; this would happen by chance about one time in ten. Twenty-three months is one regime. Forty-one signals were screened to find these two, and two false positives were expected. Most of all, <b>+20.6pp a year is roughly four times the documented value premium</b> of 4&ndash;5pp. A real edge that size, from two ratios published in 1977 and traded by every quant fund alive, is not plausible. Something here is still flattering us; survivorship was measured and is not it, which leaves selection and luck.</p>
+      <p class="note" style="margin-top:12px;"><b>And it lives in thin names (tested 1 Oct).</b> Same 23 months, liquidity floor raised: <b>+1.46%/month at $0.5m</b> (t 1.67), +1.14% at $2m (t 1.18), <b>+0.06% at $10m</b> (t 0.07), +0.57% at $50m (t 0.82). Against 200 random 40-name books from the same universe the value tilt adds +1.23%, +1.11%, +0.13%, +0.74%. At the size real funds trade, the edge is indistinguishable from zero &mdash; consistent with a small-cap illiquidity premium plus luck, not a value edge 4x the literature. A book of the modelled size can trade $0.5m names, so this does not stop the book; it is one more reason the honest expectation is 4&ndash;5pp, and a second forward threshold is now registered for the $10m variant. <b>Rerun 8 Oct on the corrected harness, 24 months:</b> +0.69% at $0.5m, +0.36% at $2m, &minus;0.46% at $10m, +0.52% at $50m, with no t above 0.7. The gap between thin and liquid names shrinks from about 0.9pp a month to about 0.2pp. &ldquo;It lives in thin names&rdquo; is now weak evidence, not a finding.</p>
+      <p class="note" style="margin-top:12px;"><b>Trading costs do not explain it (tested 5 Oct).</b> The book trades about 49% of its weight a month, both sides counted. With half-spreads of 50bp below $2m a day, 20bp to $10m, 8bp to $50m and 3bp above, plus square-root market impact at a $1m book, the $0.5m edge falls from +1.60% to <b>+1.33%/month net</b> (t 1.48), against +1.17% at $2m. Even at twice those spreads it is +1.20%. Spreads would have to average 1.06% a side before the $2m floor beat $0.5m. So the floor stays where it is &mdash; costs are not what makes the thin-name edge suspicious; luck still is. Roll&rsquo;s spread estimator was tried and gave ~0.8% at every floor, $50m names included, so it was measuring noise, not spread, and was dropped.</p>
+      <p class="note" style="margin-top:12px;"><b>Corrected 8 Oct &mdash; the headline was overstated.</b> Calibrating against the published OSAP returns exposed two flaws in the backtest harness. (1) Its universe never had the live book&rsquo;s filter, so preferred lines and second share classes got in &mdash; FNMAS, FMCKJ, PSA-PL, PSA-PP, ALL-PH, UHAL-B &mdash; priced at $20 against the parent&rsquo;s whole share count, which makes them look absurdly cheap. (2) Market cap at past dates used today&rsquo;s split-adjusted price against then-reported shares, a lookahead that makes future forward-splitters look cheap. Fixing both, and adding September 2026 (&minus;12.9% against SPY, with Fannie and Freddie both in the book), gives <b>+0.69%/month, t 0.68, over 24 months</b>: +22.9%/yr against +15.6%. On the first 23 months alone the fix takes +1.46% to +1.28%; the rest is September. The live book never had either flaw &mdash; only the evidence behind it did.</p>
+      <p class="note" style="margin-top:12px;"><b>What to expect if it is real:</b> 4&ndash;5pp a year, not 20. That is still worth having, and it is what the published record supports.</p>
+    </section>
+
+    <section>
+      <h2>Why the book is now value only</h2>
+      <p class="lede" style="margin-bottom:18px;">Every earlier screen ranked signals by quintile spread &mdash; the gap between the best and worst names. That rewards a signal whose <em>bottom</em> is terrible, which is worthless when you cannot short and never hold the bottom. Rescreening all 41 signals on a 40-name long-only book against SPY changed almost every verdict.</p>
+      <div class="listbox">
+        <h3>All 41 signals, scored on the real objective</h3>
+        <p class="sub">Edge per quarter against SPY, and the share of 250 pure-noise signals doing as well.</p>
+        <div class="tw"><table><thead><tr><th>Signal</th><th class="r">Edge vs SPY</th><th class="r">Win</th><th class="r">p vs noise</th><th>Note</th></tr></thead><tbody>
+<tr><td class="tk">SP</td><td class="r sc">+4.75%</td><td class="r">86%</td><td class="r" style="color:var(--done)">2%</td><td class="dv">kept</td></tr>
+<tr><td class="tk">bm</td><td class="r sc">+4.19%</td><td class="r">71%</td><td class="r" style="color:var(--done)">2%</td><td class="dv">kept</td></tr>
+<tr><td class="tk">insider</td><td class="r">+2.80%</td><td class="r">71%</td><td class="r">6%</td><td class="dv">just misses</td></tr>
+<tr><td class="tk">cfp</td><td class="r">+1.97%</td><td class="r">57%</td><td class="r">14%</td><td class="dv">kept &mdash; same idea, measured on cash</td></tr>
+<tr><td class="tk">mom_12_1</td><td class="r">&minus;0.17%</td><td class="r">57%</td><td class="r">48%</td><td class="dv">removed</td></tr>
+<tr><td class="tk">Mom6m</td><td class="r" style="color:var(--open)">&minus;3.71%</td><td class="r">29%</td><td class="r">98%</td><td class="dv">removed &mdash; passed the old screen at p=1%</td></tr>
+<tr><td class="tk">asset_growth</td><td class="r" style="color:var(--open)">&minus;4.91%</td><td class="r">29%</td><td class="r">100%</td><td class="dv">removed &mdash; I had added it</td></tr>
+<tr><td class="tk">d_noa</td><td class="r" style="color:var(--open)">&minus;5.30%</td><td class="r">29%</td><td class="r">100%</td><td class="dv">removed &mdash; I had added it</td></tr>
+        </tbody></table></div>
+      </div>
+      <p class="note"><b>Two of the signals I promoted were among the worst.</b> Asset growth and change in net operating assets were added on the two-source rule and measured &minus;4.91% and &minus;5.30% on the objective they were meant to serve. The screen was not merely imprecise; it selected for the wrong thing.</p>
+      <p class="note" style="margin-top:12px;"><b>The value book: +5.71% per quarter, 71% of quarters, t = 2.09.</b> Six of seven quarters positive. Dropping any single quarter leaves t between 1.55 and 2.61, so it does not hang on one observation.</p>
+      <p class="note" style="margin-top:12px;"><b>Three reasons to hold it loosely.</b> Two strong quarters carry most of it &mdash; without them the edge is +1.84% and t falls to 1.15. Forty-one signals were screened on seven observations, so roughly two false positives were expected and exactly two appeared. And value is the <em>most</em> survivorship-exposed strategy there is: cheap stocks are cheap because they are distressed, and the ones that went bankrupt are missing from a price panel that deletes failures. The published case for value spans forty years and is far stronger than anything measurable here; that, not our seven quarters, is the reason to run it.</p>
+    </section>
+
+    <section>
+      <h2>Can any of this beat the index? Thirty-nine attempts say no</h2>
+      <p class="lede" style="margin-bottom:18px;">The owner asked for a portfolio that beats the market and told me not to stop until I found one. I stopped, because continuing would have manufactured one.</p>
+      <div class="listbox">
+        <h3>Everything tested against SPY, 63-day holds, seven quarterly dates</h3>
+        <p class="sub">Six score constructions &times; five sizes, then eight breadth levels on the best, then read-across as a standalone book. All pre-specified; all reported.</p>
+        <div class="tw"><table><thead><tr><th>Test</th><th class="r">Best result</th><th class="r">t</th><th>Verdict</th></tr></thead><tbody>
+<tr><td>6 constructions &times; 10&ndash;40 names</td><td class="r" style="color:var(--open)">&minus;0.23%</td><td class="r">&minus;0.09</td><td style="font-family:var(--mono);font-size:12px">0 of 30 positive</td></tr>
+<tr><td>Breadth 40 &rarr; 500 names</td><td class="r">+0.47%</td><td class="r">+0.24</td><td style="font-family:var(--mono);font-size:12px">flat, indistinguishable</td></tr>
+<tr><td>Read-across as a portfolio</td><td class="r" style="color:var(--open)">&minus;0.25%</td><td class="r">&minus;0.37</td><td style="font-family:var(--mono);font-size:12px">37% win rate</td></tr>
+        </tbody></table></div>
+      </div>
+      <p class="note"><b>Concentration is actively harmful, and that finding is solid.</b> Ten names lost to forty in all six score constructions without exception &mdash; six independent confirmations, which makes it the most trustworthy number here. Extreme ranks are where noise is largest, not where edge is largest. The earlier +0.73% came from the top <em>quintile</em>, roughly 500 names; an edge that needs 500 positions is closet indexing.</p>
+      <p class="note" style="margin-top:12px;"><b>But every t-statistic sits between &minus;1.9 and +0.24.</b> Nothing is distinguishable from SPY in either direction. With quarterly standard deviations of 5&ndash;15% over seven observations, the standard error on any edge is &plusmn;2&ndash;3%. This does not show the system loses; it shows <b>seven quarters cannot resolve an edge of the size worth hunting</b> &mdash; the same statistical-power wall that killed the two previous attempts, now measured rather than argued.</p>
+      <p class="note" style="margin-top:12px;"><b>Which makes the constraint data, not effort.</b> Detecting a 2&ndash;3%/yr edge needs decades, not quarters. Survivorship-free history back to 1998 costs about $100 for a two-month subscription. That has been deferred four times as &ldquo;nice to have&rdquo;; it is now the only thing standing between this project and an answer.</p>
+    </section>
+
+    <section>
+      <h2>How long to hold</h2>
+      <p class="lede" style="margin-bottom:18px;">The design says holding period should be an output, not an assumption. With commission at zero and currency a one-time cost on capital, only tax argues for holding longer &mdash; so it comes down to whether the edge survives the wait. It does not.</p>
+      <div class="listbox">
+        <h3>Edge decay by holding period</h3>
+        <p class="sub">Edge is the top composite quintile minus the universe average. Annualised is what that edge is worth over a year at that rebalance frequency.</p>
+        <div class="tw"><table><thead><tr><th>Hold</th><th class="r">Edge per cycle</th><th class="r">Edge, annualised</th><th class="r">After tax at 42%</th><th class="r">Dates</th></tr></thead><tbody>
+<tr><td class="tk">21 days</td><td class="r">+0.98%</td><td class="r sc"><b>+11.79%</b></td><td class="r">+25.0%</td><td class="r" style="color:var(--ink-faint)">6</td></tr>
+<tr><td class="tk">63 days</td><td class="r">+1.27%</td><td class="r sc">+5.09%</td><td class="r">+14.5%</td><td class="r" style="color:var(--ink-faint)">6</td></tr>
+<tr><td class="tk">126 days</td><td class="r">+2.42%</td><td class="r sc">+4.85%</td><td class="r">+12.8%</td><td class="r" style="color:var(--ink-faint)">6</td></tr>
+<tr><td class="tk">252 days</td><td class="r">&minus;0.15%</td><td class="r sc"><b>&minus;0.15%</b></td><td class="r">+15.4%</td><td class="r" style="color:var(--ink-faint)">4</td></tr>
+        </tbody></table></div>
+      </div>
+      <p class="note"><b>The edge decays faster than the tax saves.</b> Annualised it runs +11.79% at three weeks, +5.09% at a quarter, and reaches <b>zero at one year</b> &mdash; the top quintile returned +26.46% against a universe average of +26.61%. Tax deferral is worth 2&ndash;3pp a year. The edge difference between rebalancing monthly and annually is roughly 12pp. Deferral loses that argument outright.</p>
+      <p class="note" style="margin-top:12px;"><b>Which overturns a locked assumption.</b> The design held that annual-rebalance signals started with a large head start, and the triage finding that 10 of 11 core signals rebalance annually was treated as happy confirmation. Both legs are now gone: there is no commission to save, and the edge does not survive twelve months. <b>Rebalance monthly to quarterly.</b></p>
+      <p class="note" style="margin-top:12px;"><b>Read-across clears its hurdle comfortably.</b> About +2.10% per event, four events a year, +4.96% annually after tax against a deferral hurdle near 2pp. Under the old cost assumptions it would not have.</p>
+      <p class="note" style="margin-top:12px;"><b>Read this against its window.</b> 2024&ndash;2026 was a strong bull market &mdash; the universe returned +26.61% over twelve months, which compresses cross-sectional differences and may be the whole reason the one-year edge vanishes. Six dates, four at the annual horizon. Directionally useful, nowhere near settled.</p>
+    </section>
+
+    <section>
+      <h2>What is wrong with this ranking</h2>
+      <div class="cols">
+        <div class="card">
+          <h3>Bugs the sanity checks caught</h3>
+          <ul>
+            <li><b>Market caps were nonsense</b><em>First run had Fannie Mae preferred at $36,480bn. Preferred lines and units were inheriting the parent&rsquo;s entire share count, and ADRs mismatched price against home-market shares. Fixed by resolving one primary ticker per CIK and keeping only domestic filers.</em></li>
+            <li><b>EarningsStreak was empty</b><em>553 names, every streak zero. A calendar-quarter pivot misaligns any company with an off-calendar fiscal year. Rewritten to compare each quarter against the observation ~365 days back in that company&rsquo;s own series. Now 4,555 names.</em></li>
+            <li><b>Commodity ETFs ranked top-10</b><em>UGA, CPER and UUP file 10-Ks, so the domestic-filer test passed them. A currency fund was being scored on accruals.</em></li>
+            <li><b>Momentum was voting twice</b><em>It sat in the mean term and the skew term, scoring +0.74 against the composite while value managed +0.13 &mdash; a momentum screen wearing a costume. Moved to skew only, where it belongs.</em></li>
+            <li><b>Athene Holding, acquired in 2022, ranked 3rd</b><em>Near-zero market cap sends every ratio to infinity and scores a perfect 1.00 on value and financing.</em></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Known weaknesses, unfixed</h3>
+          <ul>
+            <li><b>Microsoft and Tesla were missing from prices</b><em>Not an SEC problem &mdash; both had full share data. The daily snapshot carries 9,642 tickers while the 3-year history carries 9,687, and MSFT, TSLA and MRK fell in the gap. Market cap now reads from the fuller source. Found only by spot-checking whether the mega caps were actually in the output.</em></li>
+            <li><b>94 names still have no share count</b><em>Down from 471. The dei cover-page tag alone was dropping Alphabet and Meta outright; a fallback chain through CommonStockSharesOutstanding, diluted weighted-average and shares-issued lifted coverage of the resolved universe to 97.2%. An earlier note here put the gap at 36% &mdash; that measured against all liquid tickers including foreign filers and secondary share lines we exclude on purpose, so it was the wrong denominator.</em></li>
+            <li><b>Sector labels now cover all but 1.7%</b><em>Unlabelled names in the scored universe fell from 367 to 44 once the map gained a complete fallback by SIC major group. Most of the earlier gap was codes the mapping did not handle, not companies missing a code.</em></li>
+            <li><b>The old bank filter was leaking</b><em>It matched on company names, so Banks still sat at 2.6x overweight in a list they were supposedly excluded from. Only visible once real SIC codes existed to measure against.</em></li>
+            <li><b>No evidence any of this works</b><em>Zero forward validation. These are documented effects assembled with defensible plumbing, which is not the same as a tested strategy.</em></li>
+            <li><b>One ADR still wrong</b><em>BeOne Medicines at $536bn on an ADS-ratio mismatch. Failure mode is safe &mdash; an inflated cap looks expensive and gets excluded rather than wrongly bought.</em></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </section>
+
+  <!-- ================= DRIVERS ================= -->
+  <section class="panel" data-p="drivers">
+    <div class="goal" style="background:var(--sunk);border-color:var(--rule-strong);margin-bottom:24px;">
+      <h3 style="color:var(--ink-soft);">What this map is not</h3>
+      <p style="font-size:15px;">Coverage is not progress. Thirty-nine portfolio constructions were tested against SPY and none beat it &mdash; adding drivers did not move the result, and the two most recently added clusters changed nothing measurable. This map is a record of the search space, useful for knowing what has <em>not</em> been looked at. It is not a scoreboard, and a higher covered count would not mean a better system.</p>
+    </div>
+    <p class="lede">Everything identified that can move a stock price, built from first principles rather than from what happens to be published. A price is what people expect a company to earn, divided by what they demand for the risk, plus pressure on the shares themselves. Six roots, 173 drivers. Click any root to expand.</p>
+
+    <div class="legend">
+      <span><b class="m m-val">&#9679;</b> Covered &mdash; some signal in the system touches it</span>
+      <span><b class="m m-bld">&#9675;</b> Buildable free &mdash; nothing built</span>
+      <span><b class="m m-paid">$</b> Paid data</span>
+      <span><b class="m m-hard">~</b> No clean dataset</span>
+    </div>
+
+    <div class="roots">
+      <details class="root">
+        <summary>
+          <span class="rname">1 &middot; Business fundamentals</span>
+          <span class="rcount">37</span>
+          <span class="rbar">
+            <i class="s-val"  style="width:21.6216%"></i><i class="s-bld"  style="width:56.7568%"></i><i class="s-paid" style="width:0.0000%"></i><i class="s-hard" style="width:21.6216%"></i>
+          </span>
+          <span class="rlegend"><b class="m-val">8</b> <b class="m-bld">21</b> <b class="m-paid">0</b> <b class="m-hard">8</b></span>
+        </summary>
+        <p class="what">What the company will actually earn.</p>
+        <ul><li><span class="m m-val">&#9679;</span>Profitability level <small>roaq</small></li>
+          <li><span class="m m-val">&#9679;</span>Earnings growth persistence <small>EarningsStreak, EarningsConsistency</small></li>
+          <li><span class="m m-val">&#9679;</span>Revenue surprise <small>RevenueSurprise</small></li>
+          <li><span class="m m-val">&#9679;</span>Cash conversion <small>cfp</small></li>
+          <li><span class="m m-val">&#9679;</span>Balance-sheet distress risk <small>OScore</small></li>
+          <li><span class="m m-val">&#9679;</span>Working-capital quality <small>PctTotAcc</small></li>
+          <li><span class="m m-val">&#9679;</span>Tax-rate change <small>ChTax, Tax</small></li>
+          <li><span class="m m-val">&#9679;</span>Capex / investment growth <small>InvGrowth</small></li>
+          <li><span class="m m-bld">&#9675;</span>End-market demand growth</li>
+          <li><span class="m m-bld">&#9675;</span>Margin trend and direction</li>
+          <li><span class="m m-bld">&#9675;</span>Operating leverage</li>
+          <li><span class="m m-bld">&#9675;</span>Capacity utilisation</li>
+          <li><span class="m m-bld">&#9675;</span>Customer concentration <small>10-K extraction</small></li>
+          <li><span class="m m-bld">&#9675;</span>Winning or losing a major customer</li>
+          <li><span class="m m-bld">&#9675;</span>New product cycle</li>
+          <li><span class="m m-bld">&#9675;</span>Geographic expansion</li>
+          <li><span class="m m-bld">&#9675;</span>Input and commodity costs</li>
+          <li><span class="m m-bld">&#9675;</span>Wage and labour cost</li>
+          <li><span class="m m-bld">&#9675;</span>M&amp;A and divestiture</li>
+          <li><span class="m m-bld">&#9675;</span>R&amp;D spend and productivity</li>
+          <li><span class="m m-bld">&#9675;</span>Regulation, approvals, tariffs</li>
+          <li><span class="m m-bld">&#9675;</span>Litigation and IP disputes</li>
+          <li><span class="m m-hard">~</span>Market-share shifts</li>
+          <li><span class="m m-hard">~</span>Realised pricing power</li>
+          <li><span class="m m-hard">~</span>Supply-chain disruption, lead times</li>
+          <li><span class="m m-hard">~</span>Competitive entry and exit</li>
+          <li><span class="m m-hard">~</span>Technological obsolescence</li>
+          <li><span class="m m-hard">~</span>Barriers to entry / can supply respond</li>
+          <li><span class="m m-bld">&#9675;</span>Cash runway &mdash; months until funding is needed</li>
+          <li><span class="m m-bld">&#9675;</span>Loss-to-profit inflection <small>percentage earnings change explodes off a near-zero base</small></li>
+          <li><span class="m m-bld">&#9675;</span>Binary regulatory readout <small>FDA decision, clinical-trial result &mdash; the biggest single source of +1000% moves</small></li>
+          <li><span class="m m-bld">&#9675;</span>Patent cliff / exclusivity expiry</li>
+          <li><span class="m m-bld">&#9675;</span>Read-across from a peer&rsquo;s results</li>
+          <li><span class="m m-bld">&#9675;</span>Customer or supplier guidance change <small>the thesis of an earlier project</small></li>
+          <li><span class="m m-bld">&#9675;</span>Product recall or safety failure</li>
+          <li><span class="m m-hard">~</span>Key-person departure or death</li>
+          <li><span class="m m-hard">~</span>Competitor failure benefiting the survivors</li></ul>
+      </details>
+      <details class="root">
+        <summary>
+          <span class="rname">2 &middot; Valuation &amp; risk</span>
+          <span class="rcount">35</span>
+          <span class="rbar">
+            <i class="s-val"  style="width:14.2857%"></i><i class="s-bld"  style="width:71.4286%"></i><i class="s-paid" style="width:2.8571%"></i><i class="s-hard" style="width:11.4286%"></i>
+          </span>
+          <span class="rlegend"><b class="m-val">5</b> <b class="m-bld">25</b> <b class="m-paid">1</b> <b class="m-hard">4</b></span>
+        </summary>
+        <p class="what">What those earnings are worth today.</p>
+        <ul><li><span class="m m-val">&#9679;</span>Cheapness on sales <small>SP</small></li>
+          <li><span class="m m-val">&#9679;</span>Cheapness on cash flow <small>cfp</small></li>
+          <li><span class="m m-val">&#9679;</span>Dividend yield <small>DivYieldST</small></li>
+          <li><span class="m m-val">&#9679;</span>Earnings predictability <small>EarningsConsistency</small></li>
+          <li><span class="m m-val">&#9679;</span>Illiquidity premium <small>VolMkt</small></li>
+          <li><span class="m m-bld">&#9675;</span>Risk-free rate and curve shape</li>
+          <li><span class="m m-bld">&#9675;</span>Equity risk premium</li>
+          <li><span class="m m-bld">&#9675;</span>Cost of debt / credit spread</li>
+          <li><span class="m m-bld">&#9675;</span>Financial leverage</li>
+          <li><span class="m m-bld">&#9675;</span>Cash-flow duration &mdash; rate sensitivity</li>
+          <li><span class="m m-bld">&#9675;</span>Market capitalisation / size</li>
+          <li><span class="m m-bld">&#9675;</span>Valuation versus own history</li>
+          <li><span class="m m-bld">&#9675;</span>Valuation versus peers</li>
+          <li><span class="m m-bld">&#9675;</span>Accounting opacity, disclosure quality</li>
+          <li><span class="m m-bld">&#9675;</span>Auditor change, going-concern language</li>
+          <li><span class="m m-bld">&#9675;</span>Depreciation-life and lease reclassification</li>
+          <li><span class="m m-bld">&#9675;</span>Currency and country exposure</li>
+          <li><span class="m m-bld">&#9675;</span>Index membership</li>
+          <li><span class="m m-paid">$</span>Analyst coverage count</li>
+          <li><span class="m m-hard">~</span>Governance and board quality</li>
+          <li><span class="m m-hard">~</span>Trust discount after a scandal</li>
+          <li><span class="m m-bld">&#9675;</span>Category re-classification <small>&ldquo;industrial&rdquo; re-read as &ldquo;AI&rdquo; &mdash; multiple triples, earnings unchanged</small></li>
+          <li><span class="m m-hard">~</span>Pure-play scarcity <small>the only listed way to buy a theme</small></li>
+          <li><span class="m m-bld">&#9675;</span>Debt maturity wall <small>when the refinancing actually falls due</small></li>
+          <li><span class="m m-bld">&#9675;</span>Covenant headroom</li>
+          <li><span class="m m-bld">&#9675;</span>Non-GAAP vs. GAAP divergence <small>how far adjusted earnings drift from reported</small></li>
+          <li><span class="m m-bld">&#9675;</span>Restatement history</li>
+          <li><span class="m m-bld">&#9675;</span>Insider ownership level <small>as distinct from insider trading</small></li>
+          <li><span class="m m-bld">&#9675;</span>Dual-class or controlled structure</li>
+          <li><span class="m m-hard">~</span>Fraud risk</li>
+          <li><span class="m m-bld">&#9675;</span>Realised volatility level</li>
+          <li><span class="m m-bld">&#9675;</span>Idiosyncratic vs. market volatility</li>
+          <li><span class="m m-bld">&#9675;</span>Market beta</li>
+          <li><span class="m m-bld">&#9675;</span>Volatility contraction or expansion</li>
+          <li><span class="m m-bld">&#9675;</span>Largest single-day gain <small>the lottery marker &mdash; documented as negative on average</small></li></ul>
+      </details>
+      <details class="root">
+        <summary>
+          <span class="rname">3 &middot; Expectations &amp; information</span>
+          <span class="rcount">34</span>
+          <span class="rbar">
+            <i class="s-val"  style="width:11.7647%"></i><i class="s-bld"  style="width:61.7647%"></i><i class="s-paid" style="width:8.8235%"></i><i class="s-hard" style="width:17.6471%"></i>
+          </span>
+          <span class="rlegend"><b class="m-val">4</b> <b class="m-bld">21</b> <b class="m-paid">3</b> <b class="m-hard">6</b></span>
+        </summary>
+        <p class="what">The gap between reality and what is priced &mdash; and the moments it closes. Where alpha actually lives.</p>
+        <ul><li><span class="m m-val">&#9679;</span>Reaction on earnings day <small>AnnouncementReturn</small></li>
+          <li><span class="m m-val">&#9679;</span>Streak of rising earnings <small>EarningsStreak</small></li>
+          <li><span class="m m-val">&#9679;</span>Count of earnings increases <small>NumEarnIncrease</small></li>
+          <li><span class="m m-val">&#9679;</span>Price momentum <small>FirmAgeMom, Mom12m</small></li>
+          <li><span class="m m-bld">&#9675;</span>Earnings surprise vs. a time-series model <small>SUE &mdash; no paid consensus needed</small></li>
+          <li><span class="m m-bld">&#9675;</span>Guidance raised or cut</li>
+          <li><span class="m m-bld">&#9675;</span>Management tone on earnings calls</li>
+          <li><span class="m m-bld">&#9675;</span>Hedging language / uncertainty in filings</li>
+          <li><span class="m m-bld">&#9675;</span>Year-over-year risk-factor changes</li>
+          <li><span class="m m-bld">&#9675;</span>News volume and sentiment</li>
+          <li><span class="m m-bld">&#9675;</span>Short-seller reports</li>
+          <li><span class="m m-bld">&#9675;</span>Retail attention and social volume</li>
+          <li><span class="m m-bld">&#9675;</span>Market-implied growth vs. company guidance</li>
+          <li><span class="m m-paid">$</span>Analyst estimate revisions</li>
+          <li><span class="m m-paid">$</span>New analyst initiation</li>
+          <li><span class="m m-hard">~</span>Over-extrapolation of past growth</li>
+          <li><span class="m m-hard">~</span>Narrative attachment to a story</li>
+          <li><span class="m m-hard">~</span>Lottery preference &mdash; overpaying for long shots</li>
+          <li><span class="m m-hard">~</span>Herding and crowding into a view</li>
+          <li><span class="m m-bld">&#9675;</span>Restatement announcement</li>
+          <li><span class="m m-bld">&#9675;</span>Cyberattack or breach disclosure</li>
+          <li><span class="m m-bld">&#9675;</span>Scheduled investor day or capital-markets day</li>
+          <li><span class="m m-paid">$</span>Analyst forecast dispersion</li>
+          <li><span class="m m-bld">&#9675;</span>Proximity to 52-week high <small>documented predictor, George &amp; Hwang</small></li>
+          <li><span class="m m-bld">&#9675;</span>Relative strength vs. sector and index</li>
+          <li><span class="m m-bld">&#9675;</span>Breakout to a new high</li>
+          <li><span class="m m-bld">&#9675;</span>Price acceleration <small>rate of change of momentum</small></li>
+          <li><span class="m m-bld">&#9675;</span>Moving-average trend state</li>
+          <li><span class="m m-bld">&#9675;</span>Length of base or consolidation</li>
+          <li><span class="m m-bld">&#9675;</span>Drawdown from peak</li>
+          <li><span class="m m-bld">&#9675;</span>Gap behaviour and follow-through</li>
+          <li><span class="m m-bld">&#9675;</span>Volume&ndash;price divergence</li>
+          <li><span class="m m-hard">~</span>Oscillators &mdash; RSI, MACD, stochastics <small>weak evidence</small></li>
+          <li><span class="m m-hard">~</span>Chart patterns <small>weak evidence; works only where enough traders act on it</small></li></ul>
+      </details>
+      <details class="root">
+        <summary>
+          <span class="rname">4 &middot; Share supply &amp; flows</span>
+          <span class="rcount">28</span>
+          <span class="rbar">
+            <i class="s-val"  style="width:28.5714%"></i><i class="s-bld"  style="width:57.1429%"></i><i class="s-paid" style="width:3.5714%"></i><i class="s-hard" style="width:10.7143%"></i>
+          </span>
+          <span class="rlegend"><b class="m-val">8</b> <b class="m-bld">16</b> <b class="m-paid">1</b> <b class="m-hard">3</b></span>
+        </summary>
+        <p class="what">Buying and selling pressure on the shares, independent of what the business is worth.</p>
+        <ul><li><span class="m m-val">&#9679;</span>Net payout &mdash; buybacks minus issuance <small>NetPayoutYield</small></li>
+          <li><span class="m m-val">&#9679;</span>Share count growth <small>ShareIss1Y, ShareIss5Y</small></li>
+          <li><span class="m m-val">&#9679;</span>Net equity raised <small>NetEquityFinance, XFIN</small></li>
+          <li><span class="m m-val">&#9679;</span>Debt issuance <small>CompositeDebtIssuance, ConvDebt</small></li>
+          <li><span class="m m-val">&#9679;</span>Dividend cut or omission <small>DivOmit</small></li>
+          <li><span class="m m-val">&#9679;</span>Exchange uplisting <small>ExchSwitch</small></li>
+          <li><span class="m m-val">&#9679;</span>Time since IPO <small>AgeIPO</small></li>
+          <li><span class="m m-val">&#9679;</span>Trading-volume trend <small>VolumeTrend</small></li>
+          <li><span class="m m-bld">&#9675;</span>Index inclusion and deletion</li>
+          <li><span class="m m-bld">&#9675;</span>Passive fund flows</li>
+          <li><span class="m m-bld">&#9675;</span>Institutional ownership changes <small>13F</small></li>
+          <li><span class="m m-bld">&#9675;</span>Insider buying and selling <small>Form 4</small></li>
+          <li><span class="m m-bld">&#9675;</span>Lockup expiry</li>
+          <li><span class="m m-bld">&#9675;</span>Tax-loss selling reversal <small>+5.2pp at 30d, already measured</small></li>
+          <li><span class="m m-bld">&#9675;</span>Spin-off orphaning</li>
+          <li><span class="m m-bld">&#9675;</span>Free float size and change</li>
+          <li><span class="m m-bld">&#9675;</span>Short interest and borrow cost <small>short-leg &mdash; likely unusable</small></li>
+          <li><span class="m m-paid">$</span>Options gamma, dealer hedging</li>
+          <li><span class="m m-hard">~</span>Forced sellers &mdash; redemptions, margin calls</li>
+          <li><span class="m m-hard">~</span>Reflexive capital access <small>price up &rarr; cheap equity &rarr; funded growth &rarr; price up</small></li>
+          <li><span class="m m-hard">~</span>Squeeze dynamics as a compounding loop</li>
+          <li><span class="m m-bld">&#9675;</span>Takeover-target likelihood <small>the most common way a small stock jumps 40&ndash;100% overnight</small></li>
+          <li><span class="m m-bld">&#9675;</span>Activist stake filed <small>13D</small></li>
+          <li><span class="m m-bld">&#9675;</span>Merger-arbitrage spread on a live deal</li>
+          <li><span class="m m-bld">&#9675;</span>Delisting risk and exchange compliance notices</li>
+          <li><span class="m m-bld">&#9675;</span>Convertible and warrant overhang</li>
+          <li><span class="m m-bld">&#9675;</span>Calendar seasonality <small>January, quarter-end window dressing</small></li>
+          <li><span class="m m-bld">&#9675;</span>Options expiry and pinning</li></ul>
+      </details>
+      <details class="root">
+        <summary>
+          <span class="rname">5 &middot; Macro &amp; systematic</span>
+          <span class="rcount">20</span>
+          <span class="rbar">
+            <i class="s-val"  style="width:0.0000%"></i><i class="s-bld"  style="width:80.0000%"></i><i class="s-paid" style="width:0.0000%"></i><i class="s-hard" style="width:20.0000%"></i>
+          </span>
+          <span class="rlegend"><b class="m-val">0</b> <b class="m-bld">16</b> <b class="m-paid">0</b> <b class="m-hard">4</b></span>
+        </summary>
+        <p class="what">Economy-wide forces. In this design they set exposure, not stock choice.</p>
+        <ul><li><span class="m m-bld">&#9675;</span>Growth surprises vs. expectations</li>
+          <li><span class="m m-bld">&#9675;</span>Inflation surprises</li>
+          <li><span class="m m-bld">&#9675;</span>Central bank policy path</li>
+          <li><span class="m m-bld">&#9675;</span>Real interest rates</li>
+          <li><span class="m m-bld">&#9675;</span>System liquidity <small>Fed balance sheet, TGA, RRP</small></li>
+          <li><span class="m m-bld">&#9675;</span>Yield-curve shape</li>
+          <li><span class="m m-bld">&#9675;</span>Credit conditions and lending standards</li>
+          <li><span class="m m-bld">&#9675;</span>Credit spreads</li>
+          <li><span class="m m-bld">&#9675;</span>Currency moves</li>
+          <li><span class="m m-bld">&#9675;</span>Commodity and energy prices</li>
+          <li><span class="m m-bld">&#9675;</span>Government spending and fiscal policy</li>
+          <li><span class="m m-bld">&#9675;</span>Market risk appetite, volatility regime</li>
+          <li><span class="m m-bld">&#9675;</span>Sector rotation</li>
+          <li><span class="m m-hard">~</span>Geopolitics, war, sanctions</li>
+          <li><span class="m m-hard">~</span>Trade policy and tariff shocks</li>
+          <li><span class="m m-hard">~</span>Factor crowding and unwinds</li>
+          <li><span class="m m-bld">&#9675;</span>Policy-regime exposure <small>tariff lists, export controls, sanctions, subsidy programmes</small></li>
+          <li><span class="m m-bld">&#9675;</span>Enacted policy vs. rhetoric <small>Federal Register and BIS are slower than social media &mdash; which is why they are tradable</small></li>
+          <li><span class="m m-bld">&#9675;</span>Industry consolidation wave</li>
+          <li><span class="m m-hard">~</span>Physical climate and natural-disaster events</li></ul>
+      </details>
+      <details class="root">
+        <summary>
+          <span class="rname">6 &middot; Soft drivers</span>
+          <span class="rcount">19</span>
+          <span class="rbar">
+            <i class="s-val"  style="width:0.0000%"></i><i class="s-bld"  style="width:57.8947%"></i><i class="s-paid" style="width:21.0526%"></i><i class="s-hard" style="width:21.0526%"></i>
+          </span>
+          <span class="rlegend"><b class="m-val">0</b> <b class="m-bld">11</b> <b class="m-paid">4</b> <b class="m-hard">4</b></span>
+        </summary>
+        <p class="what">Real and probably powerful, but never cleanly published. This is where a reading advantage would pay &mdash; and where an earlier project was already digging.</p>
+        <ul><li><span class="m m-bld">&#9675;</span>Hiring velocity <small>job postings, H-1B</small></li>
+          <li><span class="m m-bld">&#9675;</span>Government contract awards <small>USASpending</small></li>
+          <li><span class="m m-bld">&#9675;</span>Executive hires from notable firms <small>tested, failed</small></li>
+          <li><span class="m m-bld">&#9675;</span>Founder-led vs. professional management</li>
+          <li><span class="m m-bld">&#9675;</span>Patent filings and citation strength</li>
+          <li><span class="m m-bld">&#9675;</span>Non-SEC regulatory filings <small>FDA, FCC, customs</small></li>
+          <li><span class="m m-bld">&#9675;</span>Clinical-trial registry progress</li>
+          <li><span class="m m-bld">&#9675;</span>Supply-chain relationship graph <small>who supplies whom</small></li>
+          <li><span class="m m-bld">&#9675;</span>Customer reviews and ratings</li>
+          <li><span class="m m-bld">&#9675;</span>Facility and real-estate expansion</li>
+          <li><span class="m m-paid">$</span>Employee sentiment and attrition</li>
+          <li><span class="m m-paid">$</span>Web traffic and app-store ranks</li>
+          <li><span class="m m-paid">$</span>Card-transaction spend data</li>
+          <li><span class="m m-paid">$</span>Satellite imagery</li>
+          <li><span class="m m-hard">~</span>Capital-allocation skill of management</li>
+          <li><span class="m m-hard">~</span>Product shipping cadence and velocity</li>
+          <li><span class="m m-hard">~</span>Culture and mission alignment</li>
+          <li><span class="m m-hard">~</span>Informal information networks</li>
+          <li><span class="m m-bld">&#9675;</span>Conference and investor-day presence</li></ul>
+      </details>
+    </div>
+
+    <div class="cols">
+      <div class="card">
+        <h3>What the map shows</h3>
+        <ul>
+          <li><b>25 of 173 covered</b><em>About a seventh of what can move a price, and bunched in two roots: fundamentals and share flows.</em></li>
+          <li><b>110 buildable free, untouched</b><em>The largest category by far, and not exotic &mdash; guidance changes, insider filings, index flows, call transcripts, patents, going-concern language.</em></li>
+          <li><b>Roots 5 and 6 have zero validated</b><em>Macro was deliberately demoted to a risk dial. Soft drivers cannot be validated from any published catalog &mdash; only pre-registered and tested forward.</em></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>How to read the gaps</h3>
+        <ul>
+          <li><b>Buildable does not mean worth building</b><em>Each still needs a mechanism and a boundary. The map is a search space, not a to-do list.</em></li>
+          <li><b>Unmeasurable is not unimportant</b><em>Management capital-allocation skill probably matters more than half the validated pool. It stays on the map so we never confuse what we can measure with what matters.</em></li>
+          <li><b>The roots are complete; the leaves are not</b><em>Every driver added in the last audit slotted into an existing root without forcing a new one. Future gaps will be more leaves, not a restructure.</em></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= DESIGN ================= -->
+  <section class="panel" data-p="design">
+    <div class="cols">
+      <div class="card">
+        <h3>Locked</h3>
+        <ul>
+          <li><b>Results are the goal, not method purity</b><em>No constraint on approach, high risk accepted. Hedge-fund underperformance is mostly fees, size and mandate &mdash; none of which bind here.</em></li>
+          <li><b>US-only universe</b><em>Every free alternative-data source is American; no other market has a structured equivalent.</em></li>
+          <li><b>Changes, not levels</b><em>Prices move on revised expectations. What everyone can screen for is already priced.</em></li>
+          <li><b>No funnel</b><em>Four layers, each deciding a different thing. Macro sizes the book; it never picks names.</em></li>
+          <li><b>Condition inputs, not weights</b><em>An indicator&rsquo;s definition changes by company type. Its weight does not. Fifteen fitted parameters instead of 225.</em></li>
+          <li><b>Score carries skew, not just mean</b><em>A composite built to rank average return systematically underweights fat-right-tail names &mdash; exactly the ones this portfolio wants. <b>Tested 9 Oct:</b> over 24 months the live 70/30 book earned +0.45%/mo vs SPY against +0.61%/mo for value alone (difference &minus;0.16%/mo, t &minus;0.20; random 30% overlays &minus;0.30%, p=0.36). The skew term has not earned its place in backtest; it stays live until the forward record decides (threshold registered).</em></li>
+          <li><b>Position count floors at ~40</b><em>Arithmetic. At a 5% hit rate, 10 names miss the winner 60% of the time.</em></li>
+          <li><b>Commission is zero; tax is the real cost</b><em>Commission is assumed zero and FX is not modelled, so per-trade cost is near zero &mdash; only bid-ask spread remains, 1&ndash;3bp in liquid names. The head start that annual-rebalance signals held over fast ones has gone. What is left is realisation tax, modelled at 42%: not a per-trade charge but a deferral cost, worth roughly 1.5&ndash;2pp a year. <b>That is the entire hurdle a faster signal now has to clear.</b></em></li>
+          <li><b>Survivorship does not block a live score</b><em>It corrupts backtests, not today&rsquo;s cross-section. This unblocked the whole build on free data.</em></li>
+          
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Rejected &mdash; settled</h3>
+        <ul>
+          
+          <li><b>Macro &rarr; sector &rarr; stock funnel</b><em>Gates kill the best names; errors compound; the weakest layer got the most attention.</em></li>
+          <li><b>Fitting weights per regime</b><em>~225 free parameters on data that does not exist.</em></li>
+          <li><b>Options and margin</b><em>Out of scope; margin is path-dependent ruin.</em></li>
+          <li><b>Pass/fail per signal</b><em>An earlier project&rsquo;s design. Discards weak-but-real signals that only pay in a blend.</em></li>
+          <li><b>A self-improving loop, for now</b><em>The architecture is right and the infrastructure already exists &mdash; it was never what failed. A loop amplifies whatever its evaluator measures, and a backtest at n=15 measures luck. Loop it once the evaluator is real.</em></li>
+        </ul>
+      </div>
+    </div>
+
+    <section>
+      <h2>Open</h2>
+      <div class="opens">
+        <div class="op"><div><b>Which survivors are real, and which are luck</b><em>Roughly eleven passes are false positives by chance and statistics cannot say which. Each survivor needs a mechanism &mdash; who is making what mistake &mdash; and a boundary where it must be absent if that story is true.</em></div><span class="tag">blocks trust</span></div>
+        <div class="op"><div><b>Archetype boundaries</b><em>They fall out of asking which survivors flip sign across company types, so the taxonomy gets designed from evidence rather than guessed.</em></div><span class="tag">next</span></div>
+        <div class="op" data-k="admin"><div><b>Recorder is moving to the cloud</b><em>It ran by hand until September, then on a launchd job, and from 6 Oct on a GitHub runner Tue&ndash;Sat &mdash; because a local machine is not a reliable scheduler. The launchd job is deliberately still running so there is no gap; it comes off once the cloud pipeline has passed end to end. Every missed day is permanently lost history for companies that delist that day.</em></div><span class="tag">admin</span></div>
+        <div class="op" data-k="admin"><div><b>Unverified externals</b><em>Which instruments are tradable; current realisation-tax rules. Both affect what is tradable and what is keepable.</em></div><span class="tag">admin</span></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>How the build defends itself</h2>
+      <div class="cols">
+        <div class="card">
+          <h3>Every signal gets an agent told to destroy it</h3>
+          <p class="note">Six checks each: lookahead, market-cap sanity, tail artefacts, coverage bias, sign direction, duplication. The builder had an incentive to report success. The verifier does not, and defaults to rejecting.</p>
+          <p class="note" style="margin-top:12px;">One check comes from experience: an earlier project produced a $4.1tn market cap for MDU Resources from a bad share-count join. Every verifier must now print the twenty largest companies and confirm they really are the largest before anything downstream is trusted.</p>
+        </div>
+        <div class="card">
+          <h3>One bet gets one vote</h3>
+          <p class="note">The payout cluster is eight separate measurements of a single idea &mdash; companies that fund themselves and return capital beat companies that keep raising money. Averaged within the cluster first, so it counts once.</p>
+          <p class="note" style="margin-top:12px;">Skip that step and the whole composite is one idea wearing a disguise, while looking diversified. This is the construction decision that matters more than any individual signal.</p>
+        </div>
+      </div>
+    </section>
+  </section>
+
+  <footer>
+    Design notes are kept privately. A status view, not a source of truth &mdash; and not financial advice.
+  </footer>
+</div>
+
+<script>
+  const tabs = [...document.querySelectorAll('nav button')];
+  const panels = [...document.querySelectorAll('.panel')];
+  function show(name) {
+    tabs.forEach(b => b.setAttribute('aria-selected', String(b.dataset.t === name)));
+    panels.forEach(p => p.dataset.p === name ? p.setAttribute('data-active','') : p.removeAttribute('data-active'));
+  }
+  tabs.forEach((b, i) => {
+    b.addEventListener('click', () => show(b.dataset.t));
+    b.addEventListener('keydown', e => {
+      const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (!d) return;
+      e.preventDefault();
+      const n = tabs[(i + d + tabs.length) % tabs.length];
+      n.focus(); show(n.dataset.t);
+    });
+  });
+
+
+</script>

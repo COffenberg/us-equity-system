@@ -1,0 +1,1051 @@
+{
+ "benchmark_prices": {
+  "IWM": NaN,
+  "QQQ": 729.87,
+  "SPY": 772.67
+ },
+ "benchmarks": [
+  "SPY",
+  "QQQ",
+  "IWM"
+ ],
+ "date": "2026-08-19",
+ "lists": {
+  "COMBINED": [
+   {
+    "adj_close": 40.23,
+    "price": 40.23,
+    "score": 0.8115,
+    "sector": "Medical devices",
+    "ticker": "ELMD"
+   },
+   {
+    "adj_close": 17.0,
+    "price": 17.0,
+    "score": 0.8087,
+    "sector": "Biotech & pharma",
+    "ticker": "RLYB"
+   },
+   {
+    "adj_close": 111.25,
+    "price": 111.25,
+    "score": 0.7986,
+    "sector": "Banks",
+    "ticker": "BFH"
+   },
+   {
+    "adj_close": 103.68,
+    "price": 103.68,
+    "score": 0.7978,
+    "sector": "Banks",
+    "ticker": "ECPG"
+   },
+   {
+    "adj_close": 143.24,
+    "price": 143.24,
+    "score": 0.7779,
+    "sector": "Technology",
+    "ticker": "OKTA"
+   },
+   {
+    "adj_close": 263.91,
+    "price": 263.91,
+    "score": 0.7762,
+    "sector": "Banks",
+    "ticker": "ENVA"
+   },
+   {
+    "adj_close": 122.29,
+    "price": 122.29,
+    "score": 0.776,
+    "sector": "Materials",
+    "ticker": "UAN"
+   },
+   {
+    "adj_close": 123.65,
+    "price": 123.65,
+    "score": 0.7698,
+    "sector": "Business services",
+    "ticker": "MCRI"
+   },
+   {
+    "adj_close": 45.79,
+    "price": 45.79,
+    "score": 0.7698,
+    "sector": "Industrials",
+    "ticker": "WEYS"
+   },
+   {
+    "adj_close": 508.48,
+    "price": 508.48,
+    "score": 0.764,
+    "sector": "Biotech & pharma",
+    "ticker": "UTHR"
+   },
+   {
+    "adj_close": 70.21,
+    "price": 70.21,
+    "score": 0.7627,
+    "sector": "Medical devices",
+    "ticker": "UTMD"
+   },
+   {
+    "adj_close": 158.31,
+    "price": 158.31,
+    "score": 0.7618,
+    "sector": "Media & telecom",
+    "ticker": "ROKU"
+   },
+   {
+    "adj_close": 248.36,
+    "price": 248.36,
+    "score": 0.7582,
+    "sector": "Biotech & pharma",
+    "ticker": "JAZZ"
+   },
+   {
+    "adj_close": 35.64,
+    "price": 35.64,
+    "score": 0.7533,
+    "sector": "Industrials",
+    "ticker": "WKC"
+   },
+   {
+    "adj_close": 80.69,
+    "price": 80.69,
+    "score": 0.7516,
+    "sector": "Business services",
+    "ticker": "STRA"
+   },
+   {
+    "adj_close": 33.77,
+    "price": 33.77,
+    "score": 0.7512,
+    "sector": "Consumer discretionary",
+    "ticker": "GIII"
+   },
+   {
+    "adj_close": 189.5,
+    "price": 189.5,
+    "score": 0.7491,
+    "sector": "Consumer staples",
+    "ticker": "SENEA"
+   },
+   {
+    "adj_close": 5.68,
+    "price": 5.68,
+    "score": 0.748,
+    "sector": "Biotech & pharma",
+    "ticker": "MRVI"
+   },
+   {
+    "adj_close": 2.52,
+    "price": 2.52,
+    "score": 0.7454,
+    "sector": "Technology",
+    "ticker": "NXDR"
+   },
+   {
+    "adj_close": 18.36,
+    "price": 18.36,
+    "score": 0.7443,
+    "sector": "Energy",
+    "ticker": "NGL"
+   },
+   {
+    "adj_close": 43.59,
+    "price": 43.59,
+    "score": 0.7442,
+    "sector": "Biotech & pharma",
+    "ticker": "VCEL"
+   },
+   {
+    "adj_close": 105.56,
+    "price": 105.56,
+    "score": 0.7414,
+    "sector": "Technology",
+    "ticker": "ZM"
+   },
+   {
+    "adj_close": 81.81,
+    "price": 81.81,
+    "score": 0.7398,
+    "sector": "Banks",
+    "ticker": "WSFS"
+   },
+   {
+    "adj_close": 17.36,
+    "price": 17.36,
+    "score": 0.7392,
+    "sector": "Biotech & pharma",
+    "ticker": "OMER"
+   },
+   {
+    "adj_close": 143.07,
+    "price": 143.07,
+    "score": 0.7388,
+    "sector": "Materials",
+    "ticker": "DD"
+   },
+   {
+    "adj_close": 28.02,
+    "price": 28.02,
+    "score": 0.7371,
+    "sector": "Technology",
+    "ticker": "HSTM"
+   },
+   {
+    "adj_close": 9.51,
+    "price": 9.51,
+    "score": 0.736,
+    "sector": "Industrials",
+    "ticker": "LCUT"
+   },
+   {
+    "adj_close": 117.04,
+    "price": 117.04,
+    "score": 0.7346,
+    "sector": "Materials",
+    "ticker": "NWPX"
+   },
+   {
+    "adj_close": 231.78,
+    "price": 231.78,
+    "score": 0.7342,
+    "sector": "Materials",
+    "ticker": "ATI"
+   },
+   {
+    "adj_close": 28.83,
+    "price": 28.83,
+    "score": 0.7338,
+    "sector": "Technology",
+    "ticker": "ZETA"
+   },
+   {
+    "adj_close": 34.95,
+    "price": 34.95,
+    "score": 0.7337,
+    "sector": "Utilities",
+    "ticker": "ARTNA"
+   },
+   {
+    "adj_close": 34.0,
+    "price": 34.0,
+    "score": 0.7327,
+    "sector": "Industrials",
+    "ticker": "HBB"
+   },
+   {
+    "adj_close": 35.45,
+    "price": 35.45,
+    "score": 0.7321,
+    "sector": "Medical devices",
+    "ticker": "BLFS"
+   },
+   {
+    "adj_close": 34.54,
+    "price": 34.54,
+    "score": 0.7308,
+    "sector": "Business services",
+    "ticker": "AMN"
+   },
+   {
+    "adj_close": 28.89,
+    "price": 28.89,
+    "score": 0.7302,
+    "sector": "Technology",
+    "ticker": "ALOT"
+   },
+   {
+    "adj_close": 94.99,
+    "price": 94.99,
+    "score": 0.7302,
+    "sector": "Transport",
+    "ticker": "DINO"
+   },
+   {
+    "adj_close": 258.16,
+    "price": 258.16,
+    "score": 0.7296,
+    "sector": "Materials",
+    "ticker": "STLD"
+   },
+   {
+    "adj_close": 34.9,
+    "price": 34.9,
+    "score": 0.7285,
+    "sector": "Banks",
+    "ticker": "PKBK"
+   },
+   {
+    "adj_close": 110.57,
+    "price": 110.57,
+    "score": 0.7277,
+    "sector": "Industrials",
+    "ticker": "CHEF"
+   },
+   {
+    "adj_close": 71.85,
+    "price": 71.85,
+    "score": 0.7276,
+    "sector": "Banks",
+    "ticker": "HBCP"
+   }
+  ],
+  "CORE": [
+   {
+    "adj_close": 170.53,
+    "price": 170.53,
+    "score": 0.816,
+    "sector": "Healthcare services",
+    "ticker": "UHS"
+   },
+   {
+    "adj_close": 508.48,
+    "price": 508.48,
+    "score": 0.8018,
+    "sector": "Biotech & pharma",
+    "ticker": "UTHR"
+   },
+   {
+    "adj_close": 40.23,
+    "price": 40.23,
+    "score": 0.7854,
+    "sector": "Medical devices",
+    "ticker": "ELMD"
+   },
+   {
+    "adj_close": 43.59,
+    "price": 43.59,
+    "score": 0.7802,
+    "sector": "Biotech & pharma",
+    "ticker": "VCEL"
+   },
+   {
+    "adj_close": 111.25,
+    "price": 111.25,
+    "score": 0.7786,
+    "sector": "Banks",
+    "ticker": "BFH"
+   },
+   {
+    "adj_close": 133.99,
+    "price": 133.99,
+    "score": 0.7782,
+    "sector": "Materials",
+    "ticker": "ALB"
+   },
+   {
+    "adj_close": 15.29,
+    "price": 15.29,
+    "score": 0.7752,
+    "sector": "Biotech & pharma",
+    "ticker": "AUPH"
+   },
+   {
+    "adj_close": 190.97,
+    "price": 190.97,
+    "score": 0.7734,
+    "sector": "Technology",
+    "ticker": "CRM"
+   },
+   {
+    "adj_close": 80.69,
+    "price": 80.69,
+    "score": 0.769,
+    "sector": "Business services",
+    "ticker": "STRA"
+   },
+   {
+    "adj_close": 14.76,
+    "price": 14.76,
+    "score": 0.7687,
+    "sector": "Utilities",
+    "ticker": "AES"
+   },
+   {
+    "adj_close": 28.02,
+    "price": 28.02,
+    "score": 0.7675,
+    "sector": "Technology",
+    "ticker": "HSTM"
+   },
+   {
+    "adj_close": 70.21,
+    "price": 70.21,
+    "score": 0.7673,
+    "sector": "Medical devices",
+    "ticker": "UTMD"
+   },
+   {
+    "adj_close": 122.29,
+    "price": 122.29,
+    "score": 0.7663,
+    "sector": "Materials",
+    "ticker": "UAN"
+   },
+   {
+    "adj_close": 143.07,
+    "price": 143.07,
+    "score": 0.764,
+    "sector": "Materials",
+    "ticker": "DD"
+   },
+   {
+    "adj_close": 143.24,
+    "price": 143.24,
+    "score": 0.7617,
+    "sector": "Technology",
+    "ticker": "OKTA"
+   },
+   {
+    "adj_close": 573.09,
+    "price": 573.09,
+    "score": 0.7611,
+    "sector": "Banks",
+    "ticker": "CACC"
+   },
+   {
+    "adj_close": 404.98,
+    "price": 404.98,
+    "score": 0.7573,
+    "sector": "Healthcare services",
+    "ticker": "HCA"
+   },
+   {
+    "adj_close": 105.56,
+    "price": 105.56,
+    "score": 0.7547,
+    "sector": "Technology",
+    "ticker": "ZM"
+   },
+   {
+    "adj_close": 229.75,
+    "price": 229.75,
+    "score": 0.7546,
+    "sector": "Medical devices",
+    "ticker": "STE"
+   },
+   {
+    "adj_close": 98.2,
+    "price": 98.2,
+    "score": 0.7521,
+    "sector": "Medical devices",
+    "ticker": "ZBH"
+   },
+   {
+    "adj_close": 546.09,
+    "price": 546.09,
+    "score": 0.7516,
+    "sector": "Biotech & pharma",
+    "ticker": "IDXX"
+   },
+   {
+    "adj_close": 123.65,
+    "price": 123.65,
+    "score": 0.7472,
+    "sector": "Business services",
+    "ticker": "MCRI"
+   },
+   {
+    "adj_close": 17.0,
+    "price": 17.0,
+    "score": 0.7471,
+    "sector": "Biotech & pharma",
+    "ticker": "RLYB"
+   },
+   {
+    "adj_close": 4.48,
+    "price": 4.48,
+    "score": 0.7466,
+    "sector": "Biotech & pharma",
+    "ticker": "TLRY"
+   },
+   {
+    "adj_close": 1.59,
+    "price": 1.59,
+    "score": 0.7447,
+    "sector": "Technology",
+    "ticker": "NNDM"
+   },
+   {
+    "adj_close": 2.52,
+    "price": 2.52,
+    "score": 0.7446,
+    "sector": "Technology",
+    "ticker": "NXDR"
+   },
+   {
+    "adj_close": 7.21,
+    "price": 7.21,
+    "score": 0.7427,
+    "sector": "Other",
+    "ticker": "CION"
+   },
+   {
+    "adj_close": 35.64,
+    "price": 35.64,
+    "score": 0.741,
+    "sector": "Industrials",
+    "ticker": "WKC"
+   },
+   {
+    "adj_close": 33.77,
+    "price": 33.77,
+    "score": 0.7391,
+    "sector": "Consumer discretionary",
+    "ticker": "GIII"
+   },
+   {
+    "adj_close": 45.79,
+    "price": 45.79,
+    "score": 0.739,
+    "sector": "Industrials",
+    "ticker": "WEYS"
+   },
+   {
+    "adj_close": 114.9,
+    "price": 114.9,
+    "score": 0.7383,
+    "sector": "Healthcare services",
+    "ticker": "ADUS"
+   },
+   {
+    "adj_close": 182.09,
+    "price": 182.09,
+    "score": 0.735,
+    "sector": "Medical devices",
+    "ticker": "BDX"
+   },
+   {
+    "adj_close": 34.95,
+    "price": 34.95,
+    "score": 0.7349,
+    "sector": "Utilities",
+    "ticker": "ARTNA"
+   },
+   {
+    "adj_close": 25.79,
+    "price": 25.79,
+    "score": 0.7332,
+    "sector": "Transport",
+    "ticker": "PAGP"
+   },
+   {
+    "adj_close": 103.68,
+    "price": 103.68,
+    "score": 0.7316,
+    "sector": "Banks",
+    "ticker": "ECPG"
+   },
+   {
+    "adj_close": 104.12,
+    "price": 104.12,
+    "score": 0.7315,
+    "sector": "Industrials",
+    "ticker": "LCII"
+   },
+   {
+    "adj_close": 32.82,
+    "price": 32.82,
+    "score": 0.7302,
+    "sector": "Materials",
+    "ticker": "IIIN"
+   },
+   {
+    "adj_close": 12.19,
+    "price": 12.19,
+    "score": 0.7269,
+    "sector": "Media & telecom",
+    "ticker": "ACEL"
+   },
+   {
+    "adj_close": 141.84,
+    "price": 141.84,
+    "score": 0.7248,
+    "sector": "Business services",
+    "ticker": "LOPE"
+   },
+   {
+    "adj_close": 129.54,
+    "price": 129.54,
+    "score": 0.7224,
+    "sector": "Consumer discretionary",
+    "ticker": "DLTR"
+   }
+  ],
+  "READACROSS": [
+   {
+    "adj_close": 143.24,
+    "price": 143.24,
+    "score": 0.7779,
+    "sector": "Technology",
+    "ticker": "OKTA"
+   },
+   {
+    "adj_close": 105.56,
+    "price": 105.56,
+    "score": 0.7414,
+    "sector": "Technology",
+    "ticker": "ZM"
+   },
+   {
+    "adj_close": 28.89,
+    "price": 28.89,
+    "score": 0.7302,
+    "sector": "Technology",
+    "ticker": "ALOT"
+   },
+   {
+    "adj_close": 9.6,
+    "price": 9.6,
+    "score": 0.7196,
+    "sector": "Industrials",
+    "ticker": "BBCP"
+   },
+   {
+    "adj_close": 22.6,
+    "price": 22.6,
+    "score": 0.7124,
+    "sector": "Industrials",
+    "ticker": "HURC"
+   },
+   {
+    "adj_close": 124.34,
+    "price": 124.34,
+    "score": 0.7071,
+    "sector": "Technology",
+    "ticker": "SAIC"
+   },
+   {
+    "adj_close": 102.33,
+    "price": 102.33,
+    "score": 0.6853,
+    "sector": "Business services",
+    "ticker": "HQY"
+   },
+   {
+    "adj_close": 190.97,
+    "price": 190.97,
+    "score": 0.68,
+    "sector": "Technology",
+    "ticker": "CRM"
+   },
+   {
+    "adj_close": 309.83,
+    "price": 309.83,
+    "score": 0.6773,
+    "sector": "Industrials",
+    "ticker": "NDSN"
+   },
+   {
+    "adj_close": 371.28,
+    "price": 371.28,
+    "score": 0.6724,
+    "sector": "Industrials",
+    "ticker": "HEI"
+   },
+   {
+    "adj_close": 17.12,
+    "price": 17.12,
+    "score": 0.6711,
+    "sector": "Materials",
+    "ticker": "OCC"
+   },
+   {
+    "adj_close": 32.29,
+    "price": 32.29,
+    "score": 0.6692,
+    "sector": "Technology",
+    "ticker": "BOX"
+   },
+   {
+    "adj_close": 35.43,
+    "price": 35.43,
+    "score": 0.6653,
+    "sector": "Industrials",
+    "ticker": "MOV"
+   },
+   {
+    "adj_close": 479.81,
+    "price": 479.81,
+    "score": 0.6635,
+    "sector": "Technology",
+    "ticker": "DELL"
+   },
+   {
+    "adj_close": 20.07,
+    "price": 20.07,
+    "score": 0.6633,
+    "sector": "Technology",
+    "ticker": "OOMA"
+   },
+   {
+    "adj_close": 438.7,
+    "price": 438.7,
+    "score": 0.6587,
+    "sector": "Technology",
+    "ticker": "MDB"
+   },
+   {
+    "adj_close": 94.68,
+    "price": 94.68,
+    "score": 0.6568,
+    "sector": "Industrials",
+    "ticker": "DCI"
+   },
+   {
+    "adj_close": 75.1,
+    "price": 75.1,
+    "score": 0.6562,
+    "sector": "Medical devices",
+    "ticker": "COO"
+   },
+   {
+    "adj_close": 204.2,
+    "price": 204.2,
+    "score": 0.6549,
+    "sector": "Technology",
+    "ticker": "NTAP"
+   },
+   {
+    "adj_close": 15.99,
+    "price": 15.99,
+    "score": 0.6509,
+    "sector": "Technology",
+    "ticker": "PATH"
+   },
+   {
+    "adj_close": 28.72,
+    "price": 28.72,
+    "score": 0.6481,
+    "sector": "Technology",
+    "ticker": "NAVN"
+   },
+   {
+    "adj_close": 57.61,
+    "price": 57.61,
+    "score": 0.6451,
+    "sector": "Technology",
+    "ticker": "HPE"
+   },
+   {
+    "adj_close": 11.7,
+    "price": 11.7,
+    "score": 0.6445,
+    "sector": "Technology",
+    "ticker": "PD"
+   },
+   {
+    "adj_close": 535.31,
+    "price": 535.31,
+    "score": 0.6388,
+    "sector": "Technology",
+    "ticker": "AMAT"
+   },
+   {
+    "adj_close": 65.66,
+    "price": 65.66,
+    "score": 0.6377,
+    "sector": "Technology",
+    "ticker": "NTNX"
+   }
+  ],
+  "SKEW": [
+   {
+    "adj_close": 17.0,
+    "price": 17.0,
+    "score": 0.8498,
+    "sector": "Biotech & pharma",
+    "ticker": "RLYB"
+   },
+   {
+    "adj_close": 103.68,
+    "price": 103.68,
+    "score": 0.842,
+    "sector": "Banks",
+    "ticker": "ECPG"
+   },
+   {
+    "adj_close": 40.23,
+    "price": 40.23,
+    "score": 0.829,
+    "sector": "Medical devices",
+    "ticker": "ELMD"
+   },
+   {
+    "adj_close": 263.91,
+    "price": 263.91,
+    "score": 0.8233,
+    "sector": "Banks",
+    "ticker": "ENVA"
+   },
+   {
+    "adj_close": 111.25,
+    "price": 111.25,
+    "score": 0.8119,
+    "sector": "Banks",
+    "ticker": "BFH"
+   },
+   {
+    "adj_close": 189.5,
+    "price": 189.5,
+    "score": 0.8067,
+    "sector": "Consumer staples",
+    "ticker": "SENEA"
+   },
+   {
+    "adj_close": 158.31,
+    "price": 158.31,
+    "score": 0.8005,
+    "sector": "Media & telecom",
+    "ticker": "ROKU"
+   },
+   {
+    "adj_close": 28.89,
+    "price": 28.89,
+    "score": 0.796,
+    "sector": "Technology",
+    "ticker": "ALOT"
+   },
+   {
+    "adj_close": 231.78,
+    "price": 231.78,
+    "score": 0.7941,
+    "sector": "Materials",
+    "ticker": "ATI"
+   },
+   {
+    "adj_close": 18.36,
+    "price": 18.36,
+    "score": 0.794,
+    "sector": "Energy",
+    "ticker": "NGL"
+   },
+   {
+    "adj_close": 9.51,
+    "price": 9.51,
+    "score": 0.7934,
+    "sector": "Industrials",
+    "ticker": "LCUT"
+   },
+   {
+    "adj_close": 45.79,
+    "price": 45.79,
+    "score": 0.7903,
+    "sector": "Industrials",
+    "ticker": "WEYS"
+   },
+   {
+    "adj_close": 143.24,
+    "price": 143.24,
+    "score": 0.7887,
+    "sector": "Technology",
+    "ticker": "OKTA"
+   },
+   {
+    "adj_close": 123.65,
+    "price": 123.65,
+    "score": 0.7848,
+    "sector": "Business services",
+    "ticker": "MCRI"
+   },
+   {
+    "adj_close": 34.54,
+    "price": 34.54,
+    "score": 0.7833,
+    "sector": "Business services",
+    "ticker": "AMN"
+   },
+   {
+    "adj_close": 34.0,
+    "price": 34.0,
+    "score": 0.7832,
+    "sector": "Industrials",
+    "ticker": "HBB"
+   },
+   {
+    "adj_close": 122.29,
+    "price": 122.29,
+    "score": 0.7826,
+    "sector": "Materials",
+    "ticker": "UAN"
+   },
+   {
+    "adj_close": 94.99,
+    "price": 94.99,
+    "score": 0.7818,
+    "sector": "Transport",
+    "ticker": "DINO"
+   },
+   {
+    "adj_close": 5.68,
+    "price": 5.68,
+    "score": 0.7779,
+    "sector": "Biotech & pharma",
+    "ticker": "MRVI"
+   },
+   {
+    "adj_close": 118.81,
+    "price": 118.81,
+    "score": 0.7773,
+    "sector": "Financial other",
+    "ticker": "VCTR"
+   },
+   {
+    "adj_close": 117.04,
+    "price": 117.04,
+    "score": 0.7751,
+    "sector": "Materials",
+    "ticker": "NWPX"
+   },
+   {
+    "adj_close": 17.36,
+    "price": 17.36,
+    "score": 0.7748,
+    "sector": "Biotech & pharma",
+    "ticker": "OMER"
+   },
+   {
+    "adj_close": 185.5,
+    "price": 185.5,
+    "score": 0.7746,
+    "sector": "Materials",
+    "ticker": "KALU"
+   },
+   {
+    "adj_close": 47.89,
+    "price": 47.89,
+    "score": 0.7741,
+    "sector": "Consumer discretionary",
+    "ticker": "BDL"
+   },
+   {
+    "adj_close": 248.36,
+    "price": 248.36,
+    "score": 0.7715,
+    "sector": "Biotech & pharma",
+    "ticker": "JAZZ"
+   },
+   {
+    "adj_close": 48.08,
+    "price": 48.08,
+    "score": 0.7692,
+    "sector": "Materials",
+    "ticker": "FRD"
+   },
+   {
+    "adj_close": 258.16,
+    "price": 258.16,
+    "score": 0.769,
+    "sector": "Materials",
+    "ticker": "STLD"
+   },
+   {
+    "adj_close": 35.45,
+    "price": 35.45,
+    "score": 0.7681,
+    "sector": "Medical devices",
+    "ticker": "BLFS"
+   },
+   {
+    "adj_close": 72.67,
+    "price": 72.67,
+    "score": 0.7674,
+    "sector": "Consumer discretionary",
+    "ticker": "CTRN"
+   },
+   {
+    "adj_close": 36.24,
+    "price": 36.24,
+    "score": 0.7671,
+    "sector": "Biotech & pharma",
+    "ticker": "ROIV"
+   },
+   {
+    "adj_close": 75.07,
+    "price": 75.07,
+    "score": 0.7665,
+    "sector": "Energy",
+    "ticker": "PBF"
+   },
+   {
+    "adj_close": 81.81,
+    "price": 81.81,
+    "score": 0.7658,
+    "sector": "Banks",
+    "ticker": "WSFS"
+   },
+   {
+    "adj_close": 83.34,
+    "price": 83.34,
+    "score": 0.7656,
+    "sector": "Technology",
+    "ticker": "DGII"
+   },
+   {
+    "adj_close": 47.8,
+    "price": 47.8,
+    "score": 0.7645,
+    "sector": "Consumer discretionary",
+    "ticker": "KRT"
+   },
+   {
+    "adj_close": 25.16,
+    "price": 25.16,
+    "score": 0.7636,
+    "sector": "Industrials",
+    "ticker": "TWIN"
+   },
+   {
+    "adj_close": 12.55,
+    "price": 12.55,
+    "score": 0.7635,
+    "sector": "Healthcare services",
+    "ticker": "LFST"
+   },
+   {
+    "adj_close": 12.34,
+    "price": 12.34,
+    "score": 0.7628,
+    "sector": "Business services",
+    "ticker": "AMWL"
+   },
+   {
+    "adj_close": 347.19,
+    "price": 347.19,
+    "score": 0.762,
+    "sector": "Energy",
+    "ticker": "VLO"
+   },
+   {
+    "adj_close": 61.73,
+    "price": 61.73,
+    "score": 0.7616,
+    "sector": "Biotech & pharma",
+    "ticker": "ETON"
+   },
+   {
+    "adj_close": 35.64,
+    "price": 35.64,
+    "score": 0.7615,
+    "sector": "Industrials",
+    "ticker": "WKC"
+   }
+  ]
+ },
+ "n_signals": 7,
+ "rules": {
+  "horizon_days": [
+   21,
+   63,
+   126,
+   252
+  ],
+  "no_survivorship_edit": "entries are never removed, including delistings",
+  "rebalance": "not yet decided -- track buy-and-hold from this date"
+ },
+ "sha256": "4df7e5e8fc44ca49",
+ "universe_scored": 2594
+}

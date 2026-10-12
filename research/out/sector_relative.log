@@ -1,0 +1,47 @@
+2024-09-30 elig  2385 secrel  -0.73% mkt  -0.31% d +0.42% overlap 30 top Industrials:5 / Media & telecom:6
+2024-10-31 elig  2381 secrel +11.36% mkt +10.93% d -0.43% overlap 30 top Industrials:6 / Industrials:5
+2024-11-29 elig  2451 secrel  +4.46% mkt  +2.73% d -1.73% overlap 31 top Banks:5 / Banks:5
+2024-12-31 elig  2487 secrel  +1.35% mkt  +2.68% d +1.33% overlap 30 top Industrials:6 / Banks:5
+2025-01-31 elig  2503 secrel  -3.54% mkt  -3.56% d -0.03% overlap 30 top Banks:5 / Banks:6
+2025-02-28 elig  2512 secrel  +0.37% mkt  +2.00% d +1.63% overlap 32 top Banks:5 / Real estate:6
+2025-03-31 elig  2485 secrel  -6.08% mkt  -8.02% d -1.93% overlap 31 top Technology:5 / Banks:6
+2025-04-30 elig  2491 secrel  +4.92% mkt  +7.58% d +2.66% overlap 28 top Banks:6 / Banks:6
+2025-05-30 elig  2538 secrel  +1.41% mkt  +4.90% d +3.49% overlap 29 top Banks:5 / Media & telecom:6
+2025-06-30 elig  2555 secrel  -3.16% mkt  -2.23% d +0.93% overlap 31 top Banks:5 / Banks:5
+2025-07-31 elig  2601 secrel +10.05% mkt +10.63% d +0.58% overlap 32 top Banks:6 / Banks:7
+2025-09-02 elig  2629 secrel  -3.39% mkt  -4.48% d -1.09% overlap 28 top Banks:6 / Banks:7
+2025-09-30 elig  2646 secrel -11.49% mkt  -9.42% d +2.07% overlap 29 top Banks:6 / Banks:8
+2025-10-31 elig  2666 secrel  +1.23% mkt  +3.11% d +1.89% overlap 30 top Banks:7 / Banks:7
+2025-12-01 elig  2716 secrel  +2.33% mkt  +0.63% d -1.70% overlap 29 top Banks:6 / Banks:8
+2025-12-31 elig  2717 secrel  +1.49% mkt  +2.13% d +0.64% overlap 31 top Banks:6 / Banks:8
+2026-01-30 elig  2732 secrel  -0.96% mkt  -1.45% d -0.50% overlap 28 top Banks:6 / Banks:7
+2026-02-27 elig  2742 secrel  +5.58% mkt  +4.74% d -0.83% overlap 30 top Banks:6 / Banks:8
+2026-03-31 elig  2739 secrel  +8.01% mkt +11.28% d +3.27% overlap 26 top Banks:5 / Banks:7
+2026-04-30 elig  2771 secrel  -2.65% mkt  -3.07% d -0.42% overlap 26 top Banks:5 / Business services:8
+2026-06-01 elig  2891 secrel  +2.84% mkt  +2.33% d -0.51% overlap 28 top Banks:6 / Other:8
+2026-06-30 elig  2898 secrel  +6.34% mkt  +5.27% d -1.06% overlap 29 top Banks:6 / Other:8
+2026-07-31 elig  2880 secrel  -0.87% mkt  +1.99% d +2.86% overlap 30 top Banks:7 / Other:8
+2026-08-31 elig  2931 secrel -12.42% mkt -11.55% d +0.87% overlap 29 top Banks:8 / Banks:7
+
+SANITY
+  months 24, eligible 2381-2931, n min [40, 40, 40, 40], bad fwd dropped/month max 112
+  largest market cap seen 5,452bn (must be < ~5,500bn)
+  single-name best +142% (CRNC), worst -60% (CABO)
+  SECREL        sectors held median 15  median mktcap 0.35bn  turnover/mo 18%  top-sector by month: {'Banks:6': 10, 'Banks:5': 7, 'Industrials:6': 2}
+  MKT           sectors held median 12  median mktcap 0.40bn  turnover/mo 17%  top-sector by month: {'Banks:7': 6, 'Banks:8': 4, 'Banks:5': 3}
+  SECREL_nocap  sectors held median 15  median mktcap 0.35bn  turnover/mo 18%  top-sector by month: {'Banks:6': 10, 'Banks:5': 7, 'Industrials:6': 2}
+  MKT_nocap     sectors held median 12  median mktcap 0.40bn  turnover/mo 17%  top-sector by month: {'Banks:7': 6, 'Banks:8': 4, 'Banks:5': 3}
+
+RESULT (monthly, vs SPY, pre-cost)
+  SECREL (control)               +0.69%/mo  t  0.57  win 58%  ann book +22.5%
+  MKT (candidate)                +1.20%/mo  t  0.98  win 62%  ann book +29.6%
+  SECREL_nocap (diagnostic)      +0.69%/mo  t  0.57  win 58%  ann book +22.5%
+  MKT_nocap (diagnostic)         +1.20%/mo  t  0.98  win 62%  ann book +29.7%
+  rand (random cap-8 books)      -0.12%/mo  t -0.21  win 46%  ann book +13.2%
+  SPY ann +15.6%
+  MKT - SECREL +0.52%/mo  t  1.56  win 54%  overlap 29.5/40  sign-flip p(MKT better) = 0.065
+  uncapped MKT - SECREL +0.52%/mo  t  1.57
+  SECREL: uncapped - cap8 +0.00%/mo  t   nan
+  MKT: uncapped - cap8 +0.00%/mo  t  1.00
+
+VERDICT as registered: BELIEF BROKEN

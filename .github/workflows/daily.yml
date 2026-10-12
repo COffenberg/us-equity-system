@@ -1,0 +1,143 @@
+name: daily pipeline
+
+# 04:15 UTC (cron runs in UTC), after the US close.
+on:
+  schedule:
+    - cron: '15 4 * * 2-6'      # Tue-Sat, covering Mon-Fri US closes
+    # Backup. GitHub drops scheduled runs without notice under load -- the very first
+    # 04:15 slot (2026-10-07) never fired. The gate job makes this a no-op if a run
+    # already committed today, so it only does work when the primary was dropped.
+    - cron: '47 6 * * 2-6'
+  workflow_dispatch:
+
+permissions:
+  contents: write      # the run commits snapshots and predictions back
+
+concurrency:
+  group: daily-pipeline          # never let two runs write snapshots at once
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 30   # today's run commit may not be the newest one
+      - id: check
+        run: |
+          TODAY=$(date -u +%F)
+          if [ "${{ github.event_name }}" = "schedule" ] && git log -1 --grep "^daily run $TODAY" --format=%h | grep -q .; then
+            echo "already ran today ($TODAY) -- skipping"; echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  run:
+    needs: gate
+    if: needs.gate.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 180   # a cold bootstrap (~35min) plus a full snapshot (~32min) needs headroom
+    env:
+      # SEC requires a contact address in the User-Agent. The repo is public, so the
+      # address lives in a repository secret rather than in the code.
+      SEC_CONTACT_EMAIL: ${{ secrets.SEC_CONTACT_EMAIL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: pip -q install -r requirements.txt
+
+      # Runners start empty. The derived panels are too large and too churny for
+      # git (97MB rewritten daily) but far too slow to rebuild each run, so they
+      # live here. A miss costs one bootstrap; a hit costs seconds.
+      - name: Restore derived data
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/prices
+            data/sec/fundamentals.parquet
+            data/sec/shares_fallback.parquet
+            data/sec/sectors.parquet
+            data/sec/f13_holdings.parquet
+            data/sec/frames
+            data/sec/accn_index.parquet
+            data/sec/full_index
+          key: derived-${{ github.run_id }}
+          restore-keys: derived-
+
+      - name: Bootstrap anything the cache did not restore
+        env:
+          GH_TOKEN: ${{ github.token }}   # bootstrap_prices.py downloads the panel-seed release
+        run: |
+          python research/bootstrap_prices.py
+          python research/bootstrap_all.py
+
+      # snapshot.py narrows to the ~5,100 tradable names using dollar_vol_60d from
+      # derived.parquet. On a cold cache that file does not exist and it silently falls
+      # back to the full 10,400-name roster -- run 5 took 32 minutes and had 100 tickers
+      # throttled because of it. Yahoo throttling is what killed the recorder twice
+      # before, so derive first rather than letting the fallback hide it.
+      - name: Ensure derived price features exist
+        run: |
+          if [ ! -f data/prices/derived.parquet ]; then
+            echo "derived.parquet absent -- deriving before snapshot so the universe narrows"
+            python research/refresh_prices.py
+          else
+            echo "derived.parquet present"
+          fi
+
+      # The bulk archives are gitignored, so each run refetches what it needs.
+      - name: Snapshot the cross-section
+        run: python recorder/snapshot.py
+
+      - name: Health check
+        run: python recorder/health.py
+
+      - name: Rebuild the pipeline
+        run: |
+          python research/refresh_prices.py
+          python signals/build_all.py
+          python signals/build_earnings_timing.py || echo "earnings_timing failed (non-fatal)"
+          python signals/build_ownership.py       || echo "ownership failed (non-fatal)"
+          python signals/rank.py
+          python signals/build_readacross.py      || echo "readacross failed (non-fatal)"
+          python orders.py
+          python forward/score.py
+
+      # Freeze a new forward record once the last is 28+ days old. The edge
+      # lives at 21-63 days and is gone by 252, so monthly is the honest cadence.
+      - name: Freeze monthly prediction if due
+        run: |
+          LAST=$(ls forward/prediction_*.json 2>/dev/null | tail -1 | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}')
+          if [ -n "$LAST" ]; then
+            AGE=$(( ( $(date +%s) - $(date -d "$LAST" +%s) ) / 86400 ))
+            if [ "$AGE" -ge 28 ]; then
+              python forward/freeze.py "$(date +%F)" && echo "froze $(date +%F) (last was ${AGE}d ago)"
+            else
+              echo "last freeze ${AGE}d ago — not due"
+            fi
+          fi
+
+      - name: Regenerate the dashboard
+        run: python dashboard.py
+
+      # Only the irreplaceable outputs are tracked; derived parquets are ignored.
+      - name: Commit what changed
+        run: |
+          git config user.name  "us-equity-bot"
+          git config user.email "214131671+COffenberg@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "nothing changed"
+          else
+            git commit -m "daily run $(date +%F)"
+            for i in 1 2 3; do
+              git pull --rebase -q origin main && git push && break
+              echo "push attempt $i failed, retrying"; sleep 15
+            done
+          fi

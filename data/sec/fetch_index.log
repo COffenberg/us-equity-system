@@ -1,0 +1,30 @@
+~/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+2020Q1 rows=46758
+2020Q2 rows=50623
+2020Q3 rows=44965
+2020Q4 rows=46150
+2021Q1 rows=54141
+2021Q2 rows=56025
+2021Q3 rows=51784
+2021Q4 rows=53947
+2022Q1 rows=53524
+2022Q2 rows=56092
+2022Q3 rows=50798
+2022Q4 rows=50025
+2023Q1 rows=53117
+2023Q2 rows=57660
+2023Q3 rows=53015
+2023Q4 rows=52537
+2024Q1 rows=56915
+2024Q2 rows=61985
+2024Q3 rows=56750
+2024Q4 rows=57368
+2025Q1 rows=59473
+2025Q2 rows=61001
+2025Q3 rows=60931
+2025Q4 rows=62556
+2026Q1 rows=67045
+2026Q2 rows=69581
+2026Q3 rows=37145
+accn index rows=1481911 -> <repo>/data/sec/accn_index.parquet

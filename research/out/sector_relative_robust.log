@@ -1,0 +1,56 @@
+SECREL       +0.69%/mo t 0.57
+MKT_elig     +1.20%/mo t 0.98
+MKT_full     +1.15%/mo t 0.90
+SECREL_elig  +0.65%/mo t 0.60
+MKT_elig - SECREL: +0.52%/mo t 1.56 win 54% | drop best month +0.39% t 1.22
+MKT_full - SECREL: +0.47%/mo t 1.23 win 54% | drop best month +0.32% t 0.88
+MKT_elig - SECREL_elig: +0.55%/mo t 1.25 win 58% | drop best month +0.42% t 0.95
+overlap SECREL vs MKT_full 29.5/40
+
+swap legs (MKT_elig vs SECREL): names/month and mean fwd return
+              count      mean    median
+leg                                    
+MKT_only  10.541667  0.022361  0.011673
+SEC_only  10.541667  0.002781  0.000000
+
+swap legs by sector (count over 24 months, mean r):
+                          count              mean         
+leg                    MKT_only SEC_only MKT_only SEC_only
+sector                                                    
+Banks                      25.0      8.0    0.043    0.079
+Biotech & pharma            NaN     24.0      NaN   -0.033
+Business services          18.0      1.0   -0.074   -0.173
+Consumer discretionary     33.0      NaN    0.034      NaN
+Consumer staples            4.0      1.0   -0.047    0.166
+Energy                     34.0      7.0    0.041    0.076
+Financial other             NaN      4.0      NaN    0.101
+Healthcare services         NaN      5.0      NaN    0.044
+Industrials                 9.0     34.0    0.068    0.025
+Insurance                   1.0      2.0    0.640   -0.250
+Materials                   NaN     37.0      NaN   -0.014
+Media & telecom            41.0      NaN    0.043      NaN
+Medical devices             NaN     20.0      NaN    0.028
+Other                      28.0      NaN    0.008      NaN
+Real estate                47.0     13.0   -0.007    0.001
+Technology                  NaN     61.0      NaN   -0.017
+Transport                  13.0      1.0    0.055   -0.080
+Utilities                   NaN     35.0      NaN    0.012
+
+top single-name contributions MKT_only:
+          date     t           sector         r
+161 2025-05-30  VSAT  Media & telecom  0.672394
+365 2026-03-31   CNC        Insurance  0.639890
+135 2025-04-30   EAF      Industrials  0.573460
+164 2025-05-30  ECHO  Media & telecom  0.562324
+133 2025-04-30    DK           Energy  0.503405
+240 2025-09-30  ACDC           Energy  0.424324
+443 2026-06-30    DK           Energy  0.327605
+370 2026-03-31  THRY  Media & telecom  0.306569
+
+leave-one-sector-out gap (approx: sum of leg returns /40, sector removed):
+  without Technology             +0.41%/mo t 1.18
+  without Real estate            +0.55%/mo t 1.69
+  without Industrials            +0.54%/mo t 1.60
+  without Media & telecom        +0.33%/mo t 1.17
+  without Energy                 +0.43%/mo t 1.37
+  without Materials              +0.46%/mo t 1.34

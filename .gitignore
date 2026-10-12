@@ -1,0 +1,42 @@
+# Re-downloadable from source. Excluded to keep the repo small — any run can
+# rebuild these from SEC and Yahoo. ~650MB that would otherwise be dead weight.
+data/sec/dera/*.zip
+data/sec/f13/*.zip
+data/sec/insider/*.zip
+data/sec/frames/
+data/prices/
+data/sec/fundamentals.parquet
+data/sec/shares_fallback.parquet
+data/sec/accn_index.parquet
+data/sec/f13_holdings.parquet
+data/sec/sectors.parquet
+
+# Resumable chunk intermediates — recreated on every run, never read after it.
+data/snapshots/parts_*/
+
+# Derived signal outputs: rebuilt by the pipeline each run.
+signals/*.parquet
+research/out/*.parquet
+
+# Local-only
+logs/
+*.bak
+.DS_Store
+__pycache__/
+*.pyc
+tracker.html.bak
+
+# KEPT DELIBERATELY, do not add here:
+#   data/snapshots/ohlcv_*.parquet  — the ONLY irreplaceable data in this project.
+#     Delisted companies are purged from Yahoo; these are the sole record they
+#     ever traded. They exist nowhere else and the local working copy is not cloud-synced.
+#   data/universe/tickers_*.csv     — point-in-time SEC rosters, same reasoning.
+#   forward/prediction_*.json       — dated forward predictions; the evidence base.
+
+# SEC API response caches — ~10,000 JSON files, all re-fetchable from EDGAR.
+data/sec/companyconcept/
+data/sec/frames_earn/
+
+# SEC contact address for the User-Agent header. Kept out of the public repo;
+# CI reads it from the SEC_CONTACT_EMAIL secret instead.
+.sec_contact

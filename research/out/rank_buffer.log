@@ -1,0 +1,61 @@
+2024-09-30 eligible  2385 bad 27
+2024-10-31 eligible  2381 bad 32
+2024-11-29 eligible  2451 bad 44
+2024-12-31 eligible  2487 bad 37
+2025-01-31 eligible  2503 bad 27
+2025-02-28 eligible  2512 bad 61
+2025-03-31 eligible  2485 bad 24
+2025-04-30 eligible  2491 bad 44
+2025-05-30 eligible  2538 bad 47
+2025-06-30 eligible  2555 bad 37
+2025-07-31 eligible  2601 bad 35
+2025-09-02 eligible  2629 bad 67
+2025-09-30 eligible  2646 bad 28
+2025-10-31 eligible  2666 bad 23
+2025-12-01 eligible  2716 bad 38
+2025-12-31 eligible  2717 bad 32
+2026-01-30 eligible  2732 bad 26
+2026-02-27 eligible  2742 bad 63
+2026-03-31 eligible  2739 bad 38
+2026-04-30 eligible  2771 bad 42
+2026-06-01 eligible  2891 bad 37
+2026-06-30 eligible  2898 bad 103
+2026-07-31 eligible  2880 bad 117
+2026-08-31 eligible  2931 bad 88
+
+SANITY
+  months 24, eligible 2381-2931
+  BUFFER60  names/month 40-40  kept from last month mean 36.3  worst held rank 60  max per sector 8
+  BUFFER80  names/month 40-40  kept from last month mean 36.9  worst held rank 80  max per sector 8
+  BUFFER120 names/month 40-40  kept from last month mean 37.5  worst held rank 118  max per sector 7
+  MONTHLY    names/month 40-40  kept from last month mean 32.8
+  BUFFER80 held-name single-month return extremes +160% / -90%
+  MONTHLY       rebalances 24  traded/rebal 49%  costs 7.42% of W  tax paid in-window 15.37%  terminal tax 2.84%  monthly r extremes +18.2%/-13.0%
+  BUFFER60      rebalances 24  traded/rebal 33%  costs 5.21% of W  tax paid in-window 12.64%  terminal tax 8.14%  monthly r extremes +19.2%/-11.7%
+  BUFFER80      rebalances 24  traded/rebal 30%  costs 4.89% of W  tax paid in-window 14.24%  terminal tax 6.90%  monthly r extremes +19.6%/-11.0%
+  BUFFER120     rebalances 24  traded/rebal 28%  costs 4.77% of W  tax paid in-window 13.64%  terminal tax 9.33%  monthly r extremes +20.0%/-12.0%
+  QUARTERLY ph0 rebalances  8  traded/rebal 87%  costs 4.20% of W  tax paid in-window 17.30%  terminal tax 7.50%  monthly r extremes +18.2%/-10.0%
+  QUARTERLY ph1 rebalances  9  traded/rebal 78%  costs 4.32% of W  tax paid in-window 13.80%  terminal tax 2.96%  monthly r extremes +17.0%/-11.6%
+  QUARTERLY ph2 rebalances  9  traded/rebal 80%  costs 4.60% of W  tax paid in-window 15.33%  terminal tax 3.29%  monthly r extremes +18.8%/-13.1%
+
+RESULT (chained months; after costs)
+  SPY ann +16.5%
+  MONTHLY       vs SPY +0.25%/mo t  0.21  pre-tax ann +17.2%  after-tax ann (liquidated) +8.5%  (unliquidated +9.8%)
+  BUFFER60      vs SPY +0.52%/mo t  0.46  pre-tax ann +21.2%  after-tax ann (liquidated) +11.2%  (unliquidated +14.8%)
+  BUFFER80      vs SPY +0.55%/mo t  0.50  pre-tax ann +21.7%  after-tax ann (liquidated) +11.6%  (unliquidated +14.6%)
+  BUFFER120     vs SPY +0.71%/mo t  0.63  pre-tax ann +23.8%  after-tax ann (liquidated) +13.0%  (unliquidated +17.1%)
+  QUARTERLY ph0 vs SPY +0.88%/mo t  0.75  pre-tax ann +26.1%  after-tax ann (liquidated) +13.9%  (unliquidated +17.2%)
+  QUARTERLY ph1 vs SPY +0.17%/mo t  0.16  pre-tax ann +16.7%  after-tax ann (liquidated) +9.1%  (unliquidated +10.4%)
+  QUARTERLY ph2 vs SPY +0.39%/mo t  0.33  pre-tax ann +19.0%  after-tax ann (liquidated) +10.2%  (unliquidated +11.6%)
+  B80 - M pre-tax after-cost +0.30%/mo  t  1.09  win 54%
+  B80 - M annualised: pre-tax +4.53pp  after-tax liquidated D = +3.07pp  unliquidated +4.82pp
+  drop month 1 (identical build): +0.31%/mo t  1.09;  drop best month: +0.18%/mo
+  diag B60 - M: pre-tax +0.27%/mo  after-tax D +2.75pp
+  diag B120 - M: pre-tax +0.45%/mo  after-tax D +4.52pp
+  diag B80 - QUARTERLY(mean ph): pre-tax +0.07%/mo  after-tax +0.52pp
+
+NOISE NULL (200 persistent random signals, rho 0.9, MONTHLY vs BUFFER80)
+  pre-tax B - M: mean +0.10%/mo, 5-95% [-0.38%, +0.67%]  value book percentile 73%
+  after-tax D:   mean +1.24pp, 5-95% [-2.45, +5.55]  value book percentile 79%
+
+VERDICT as registered: BUFFER-SUPPORTED

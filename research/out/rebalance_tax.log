@@ -1,0 +1,48 @@
+2024-09-30 eligible  2385 bad 27
+2024-10-31 eligible  2381 bad 32
+2024-11-29 eligible  2451 bad 44
+2024-12-31 eligible  2487 bad 37
+2025-01-31 eligible  2503 bad 27
+2025-02-28 eligible  2512 bad 61
+2025-03-31 eligible  2485 bad 24
+2025-04-30 eligible  2491 bad 44
+2025-05-30 eligible  2538 bad 47
+2025-06-30 eligible  2555 bad 37
+2025-07-31 eligible  2601 bad 35
+2025-09-02 eligible  2629 bad 67
+2025-09-30 eligible  2646 bad 28
+2025-10-31 eligible  2666 bad 23
+2025-12-01 eligible  2716 bad 38
+2025-12-31 eligible  2717 bad 32
+2026-01-30 eligible  2732 bad 26
+2026-02-27 eligible  2742 bad 63
+2026-03-31 eligible  2739 bad 38
+2026-04-30 eligible  2771 bad 42
+2026-06-01 eligible  2891 bad 37
+2026-06-30 eligible  2898 bad 103
+2026-07-31 eligible  2880 bad 80
+2026-08-31 eligible  2931 bad 60
+
+SANITY
+  months 24, eligible 2381-2931, picks/month min 40, bad returns zeroed/month max 103
+  held-name single-month return extremes +160% / -90%
+  monthly-arm names with no price at next date (held flat): 0
+  MONTHLY       rebalances 24  traded/rebal 49%  costs 7.42% of W  tax paid in-window 15.37%  terminal tax 2.84%  monthly r extremes +18.2%/-13.0%
+  QUARTERLY ph0 rebalances  8  traded/rebal 87%  costs 4.20% of W  tax paid in-window 17.30%  terminal tax 7.50%  monthly r extremes +18.2%/-10.0%
+  QUARTERLY ph1 rebalances  9  traded/rebal 78%  costs 4.32% of W  tax paid in-window 13.80%  terminal tax 2.96%  monthly r extremes +17.0%/-11.6%
+  QUARTERLY ph2 rebalances  9  traded/rebal 80%  costs 4.60% of W  tax paid in-window 15.33%  terminal tax 3.29%  monthly r extremes +18.8%/-13.1%
+
+RESULT (24-ish chained months; after costs)
+  SPY ann +16.5%
+  MONTHLY       vs SPY +0.25%/mo t  0.21  pre-tax ann +17.2%  after-tax ann (liquidated) +8.5%  (unliquidated +9.8%)
+  QUARTERLY ph0 vs SPY +0.88%/mo t  0.75  pre-tax ann +26.1%  after-tax ann (liquidated) +13.9%  (unliquidated +17.2%)
+  QUARTERLY ph1 vs SPY +0.17%/mo t  0.16  pre-tax ann +16.7%  after-tax ann (liquidated) +9.1%  (unliquidated +10.4%)
+  QUARTERLY ph2 vs SPY +0.39%/mo t  0.33  pre-tax ann +19.0%  after-tax ann (liquidated) +10.2%  (unliquidated +11.6%)
+  Q - M pre-tax after-cost +0.23%/mo  t  0.80  win 46%
+  Q - M annualised: pre-tax +3.39pp  after-tax liquidated D = +2.54pp  unliquidated +3.27pp  (per phase D: +5.41, +0.56, +1.66)
+
+NOISE NULL (200 random signals, same two arms)
+  pre-tax Q - M: mean +0.34%/mo, 5-95% [-0.37%, +0.98%]  value book percentile 38%
+  after-tax D:   mean +4.25pp, 5-95% [-0.52, +8.90]  value book percentile 28%
+
+VERDICT as registered: QUARTERLY-SUPPORTED

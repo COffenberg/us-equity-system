@@ -1,0 +1,10 @@
+{
+  "batch_id": "smoke",
+  "hypothesis": "Lab self-test, not a research claim: the batch runner must reproduce the registered results of BACKLOG item 14 (MONTHLY control, BUFFER80) and item 6 (QUARTERLY, mean of 3 phases) through its own spec path.",
+  "registered": "LAB-CORRECT if, within rounding, MONTHLY = +0.25%/mo t 0.21 after-tax +8.5% traded 49%/rebal AND BUFFER80 = +0.55%/mo t 0.50 after-tax +11.6% traded 30%, d +0.30%/mo t 1.09, D +3.07pp, null 73%/79% (AR1) AND QUARTERLY = +0.48%/mo after-tax +11.1% (mean of phases), d +0.23%/mo t 0.80, D +2.54pp, null 38%/28% (iid). Any mismatch = LAB-WRONG: find and fix before use.",
+  "control": {"name": "MONTHLY", "n": 40, "cap": 8, "rebalance": "monthly"},
+  "variants": [
+    {"name": "QUARTERLY", "rebalance": "quarterly"},
+    {"name": "BUFFER80", "buffer": 80}
+  ]
+}
