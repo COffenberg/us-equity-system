@@ -45,7 +45,7 @@ Scored 2521 of 10304 names. Clusters: value.
  37. NVRI   Enviri Corp                      $    0.6bn  0.920   value 0.92
  38. NATR   NATURES SUNSHINE PRODUCTS INC    $    0.2bn  0.920   value 0.92
  39. NMFC   New Mountain Finance Corp        $    0.6bn  0.919   value 0.92
- 40. RILY   BRC Group Holdings, Inc.         $    0.2bn  0.919   value 0.92
+ 40. IPI    Intrepid Potash, Inc.            $    0.4bn  0.919   value 0.92
 ```
 
 ## SKEW — 50/50 mean and upside asymmetry
@@ -139,5 +139,5 @@ Scored 2521 of 10304 names. Clusters: value.
 ## Overlap
 
 - CORE vs SKEW: 4 of 40 shared
-- CORE vs COMBINED: 10 of 40
+- CORE vs COMBINED: 11 of 40
 - SKEW vs COMBINED: 29 of 40
