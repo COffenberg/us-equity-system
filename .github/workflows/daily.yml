@@ -136,8 +136,17 @@ jobs:
             echo "nothing changed"
           else
             git commit -m "daily run $(date +%F)"
+            pushed=0
             for i in 1 2 3; do
-              git pull --rebase -q origin main && git push && break
+              if git pull --rebase -q origin main && git push; then pushed=1; break; fi
               echo "push attempt $i failed, retrying"; sleep 15
             done
+            # A run that recorded the day but could not push it must not look green.
+            [ "$pushed" = 1 ] || { echo "push failed 3 times -- snapshot NOT saved"; exit 1; }
           fi
+
+      # After the commit on purpose: a bad book turns the run red but never costs
+      # the day's snapshot. The derived parquets are not in git, so this is the
+      # only place they can be checked.
+      - name: Sanity check the rebuilt book
+        run: python recorder/sanity.py
