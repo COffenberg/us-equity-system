@@ -101,6 +101,17 @@ MULTIPLE COMPARISONS
   M=30 -> 2.98, M=100 -> 3.48, M=300 -> 3.93, M=1000 -> 4.42).
   Registered experiments from BACKLOG items 1-14 are not in the ledger, so M understates the true count.
   The bar is a filter for noise-mining, not a verdict; the batch's registered rule is the verdict.
+  REFERENCE ARMS: a variant whose param hash is already in the ledger (from an earlier batch) is a
+  reference, shown as "ref" in the bar column, and never clears. It may be re-included so an
+  interaction is visible, but re-testing old params under a new rule, or on a later data state, cannot
+  turn them into a discovery: the first run is the trial.
+
+NIGHT MODE (research/.night_mode exists; the night-lab workflow writes it, nothing else should)
+  JSON {"start": "<ISO UTC>", "budget": <int>}. While it exists the lab additionally refuses:
+  --no-ledger (a run whose numbers were seen must be counted); re-running a batch_id already in the
+  ledger (the verdict is the first run's); a variant that changes aum (a cost-model input, not a
+  candidate); and a batch that would take tonight's NEW param hashes (first ledgered at or after
+  "start") above "budget". Each night widens M, so the budget is what keeps the bar reachable.
 
 FAIL LOUD (exit code 2, nothing written to the ledger)
   missing data or harness files; harness chain markers changed; unknown or invalid params; duplicate
@@ -115,6 +126,7 @@ import numpy as np, pandas as pd
 ROOT = Path(__file__).resolve().parent.parent
 RES, OUT = ROOT/"research", ROOT/"research"/"out"
 LEDGER = RES/"lab_ledger.csv"
+NIGHT_MARK = RES/".night_mode"
 H12, H6, H14 = RES/"test_skew_overlay.py", RES/"test_rebalance_tax.py", RES/"test_rank_buffer.py"
 ALPHA_FW = 0.10
 SEED = {"iid": 20261010, "ar1": 20261012}         # item 6's and item 14's null seeds (asserted below)
@@ -282,6 +294,35 @@ def check_rerun(L, B):
              f"{sorted(set(prev.spec_hash))} vs now {B['spec_hash']}). The registered rule and params are "
              f"frozen once run: use a new batch_id.")
     return len(prev.drop_duplicates("timestamp")) if len(prev) else 0
+
+
+def read_night_mode():
+    if not NIGHT_MARK.exists(): return None
+    try:
+        m = json.loads(NIGHT_MARK.read_text())
+        return {"start": str(m["start"]), "budget": int(m["budget"])}
+    except Exception as e:
+        fail(f"{NIGHT_MARK} is unreadable ({e}); refusing to guess whether night rules apply")
+
+
+def night_checks(night, a, B, L, reruns, new_hashes):
+    bid, arms = B["batch_id"], B["arms"]
+    if a.no_ledger:
+        fail("night lab: --no-ledger is refused. A run whose numbers were seen must be counted; "
+             "use --check to validate a spec without running it.")
+    if reruns:
+        fail(f"night lab: batch_id {bid!r} is already in the ledger and its verdict is the first run's. "
+             f"Register a new batch_id; earlier params re-included there show as reference arms.")
+    ctl_aum = arms[0][2]["aum"]
+    bad = [nm for role, nm, p in arms if role == "variant" and p["aum"] != ctl_aum]
+    if bad:
+        fail(f"night lab: aum is a cost-model input, not a candidate; variants may not change it ({bad})")
+    first = L.groupby("param_hash").timestamp.min() if len(L) else pd.Series(dtype=str)
+    used = int((first >= night["start"]).sum())
+    if used + len(new_hashes) > night["budget"]:
+        fail(f"night lab: tonight's budget is {night['budget']} new param sets; {used} used, this batch "
+             f"adds {len(new_hashes)}. Stop for the night or drop variants.")
+    return used
 
 
 def bar(M, df):
@@ -503,12 +544,17 @@ def main():
     hashes = [phash(p) for _, _, p in arms]
     M = len(set(L.param_hash) | set(hashes))
     new = len(set(hashes) - set(L.param_hash))
+    prior = set(L.param_hash)                                  # reference arms: tested before this batch
+    night = read_night_mode()
+    night_used = night_checks(night, a, B, L, reruns, set(hashes) - prior) if night else None
     if a.check:
         h = harness_sources()
         check_data([h[0], h[1], h[4]])
-        print(f"OK {B['batch_id']} spec {B['spec_hash']}: {len(arms)} arms, {new} new param hashes, M would be {M}")
+        print(f"OK {B['batch_id']} spec {B['spec_hash']}: {len(arms)} arms, {new} new param hashes, M would be {M}"
+              + (f"; night budget {night_used + new}/{night['budget']}" if night else ""))
         for role, nm, p in arms:
-            print(f"  {role:7s} {nm:16s} {phash(p)} {canon(p)}")
+            ref = "  (reference: already in the ledger, cannot clear)" if role == "variant" and phash(p) in prior else ""
+            print(f"  {role:7s} {nm:16s} {phash(p)} {canon(p)}{ref}")
         return 0
 
     OUT.mkdir(parents=True, exist_ok=True)
@@ -589,7 +635,8 @@ def main():
         if role == "variant":
             d = b["monthly"] - cm
             r.update(d_mo=float(d.mean()), d_t=tstat(d), D=b["post_ann"] - cpost)
-            r["clears"] = bool(r["d_t"] >= tbar)
+            r["ref"] = phash(p) in prior
+            r["clears"] = False if r["ref"] else bool(r["d_t"] >= tbar)
             if ck != cons_key(ctl):
                 kd = dkind(p); r["null_kind_d"] = kd
                 nv, nc = NUL[kd].get(ck, []), NUL[kd].get(cons_key(ctl), [])
@@ -599,7 +646,7 @@ def main():
                     r["null_pct_d"] = float((r["null_d"] <= r["d_mo"]).mean())
                     r["null_pct_D"] = float((r["null_D"] <= r["D"]).mean())
         else:
-            r.update(d_mo=np.nan, d_t=np.nan, D=np.nan, clears=None)
+            r.update(d_mo=np.nan, d_t=np.nan, D=np.nan, clears=None, ref=False)
         r["runtime"] = r["t_real"] + (t_null.get(ck, 0.0) if owner[ck] == nm else 0.0)
 
     # scoreboard
@@ -612,7 +659,8 @@ def main():
          f">= quantile 1-{ALPHA_FW:g}/M ({tbar_how}); M = distinct param hashes in research/lab_ledger.csv + this batch",
          f"hypothesis: {B['hypothesis']}",
          f"registered: {B['registered']}",
-         data_line + (f" | re-run #{reruns + 1} of this batch_id" if reruns else ""),
+         data_line + (f" | re-run #{reruns + 1} of this batch_id" if reruns else "")
+         + (f" | night lab: {night_used + new}/{night['budget']} new param sets tonight" if night else ""),
          "",
          "| variant | vs SPY %/mo | t | after-tax ann | d %/mo (t) | D pp/yr | null% d/D | null% lvl | traded/reb | bar |",
          "|---|---|---|---|---|---|---|---|---|---|"]
@@ -623,7 +671,7 @@ def main():
         ncol = "-" if r["null_pct_d"] != r["null_pct_d"] else \
             f"{r['null_pct_d']:.0%}/{r['null_pct_D']:.0%} {r['null_kind_d']}"
         lcol = "-" if r["null_pct_lvl"] != r["null_pct_lvl"] else f"{r['null_pct_lvl']:.0%}"
-        bcol = "-" if role == "control" else ("CLEARS" if r["clears"] else "no")
+        bcol = "-" if role == "control" else ("ref" if r["ref"] else "CLEARS" if r["clears"] else "no")
         S.append(f"| {label} | {sg(r['vs_spy'])} | {r['t']:.2f} | {r['b']['post_ann']*100:+.1f}% | {dcol} | "
                  f"{sg(r['D'])} | {ncol} | {lcol} | {r['b']['turn']:.0%} | {bcol} |")
     S.append("")
@@ -660,7 +708,7 @@ def main():
                      "spy": lab.spy.tolist(), "monthly": b["monthly"].tolist(), "gross_monthly": r["gross"].tolist(),
                      "phase_monthly": [x.tolist() for x in b["phases"]] if b["phases"] else None,
                      "picks": [list(x) for x in r["picks"]], "harness_sha": hsha,
-                     "ledgered": not a.no_ledger})
+                     "ledgered": not a.no_ledger, "reference": bool(r.get("ref", False))})
     pd.DataFrame(rows).to_parquet(OUT/f"lab_{bid}.parquet")
 
     if not a.no_ledger:

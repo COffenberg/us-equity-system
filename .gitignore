@@ -40,3 +40,4 @@ data/sec/frames_earn/
 # SEC contact address for the User-Agent header. Kept out of the public repo;
 # CI reads it from the SEC_CONTACT_EMAIL secret instead.
 .sec_contact
+research/.night_mode

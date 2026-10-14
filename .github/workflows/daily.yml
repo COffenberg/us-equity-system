@@ -23,8 +23,11 @@ jobs:
     outputs:
       skip: ${{ steps.check.outputs.skip }}
     steps:
+      # ref: main, not the trigger-time sha: a backup run that waited behind a late primary
+      # must see the primary's commit and skip.
       - uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 30   # today's run commit may not be the newest one
       - id: check
         run: |
@@ -46,6 +49,8 @@ jobs:
       SEC_CONTACT_EMAIL: ${{ secrets.SEC_CONTACT_EMAIL }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -55,8 +60,20 @@ jobs:
       # Runners start empty. The derived panels are too large and too churny for
       # git (97MB rewritten daily) but far too slow to rebuild each run, so they
       # live here. A miss costs one bootstrap; a hit costs seconds.
+      # Restore only the exact cache the last run committed a pointer to. A prefix match
+      # takes whatever cache is newest, and any job in this repo can save one (the night
+      # lab included), so a prefix match would let a cache it saved feed the live book.
+      # The prefix fallback is used only before the first pointer exists.
+      - name: Which derived-data cache to trust
+        id: ck
+        run: |
+          if [ -f data/derived_cache_key.txt ]; then
+            echo "key=$(cat data/derived_cache_key.txt)" >> "$GITHUB_OUTPUT"; echo "fallback=" >> "$GITHUB_OUTPUT"
+          else
+            echo "key=derived-none" >> "$GITHUB_OUTPUT"; echo "fallback=derived-" >> "$GITHUB_OUTPUT"
+          fi
       - name: Restore derived data
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             data/prices
@@ -67,8 +84,8 @@ jobs:
             data/sec/frames
             data/sec/accn_index.parquet
             data/sec/full_index
-          key: derived-${{ github.run_id }}
-          restore-keys: derived-
+          key: ${{ steps.ck.outputs.key }}
+          restore-keys: ${{ steps.ck.outputs.fallback }}
 
       - name: Bootstrap anything the cache did not restore
         env:
@@ -127,8 +144,11 @@ jobs:
         run: python dashboard.py
 
       # Only the irreplaceable outputs are tracked; derived parquets are ignored.
+      # The pointer names the cache saved in the next step; the next run restores only that.
       - name: Commit what changed
+        id: commit
         run: |
+          echo "derived-${{ github.run_id }}-${{ github.run_attempt }}" > data/derived_cache_key.txt
           git config user.name  "us-equity-bot"
           git config user.email "214131671+COffenberg@users.noreply.github.com"
           git add -A
@@ -144,6 +164,23 @@ jobs:
             # A run that recorded the day but could not push it must not look green.
             [ "$pushed" = 1 ] || { echo "push failed 3 times -- snapshot NOT saved"; exit 1; }
           fi
+
+      # Saved explicitly, right after the commit that points at it, so a red sanity check
+      # below does not freeze the cache the way a post-step save would.
+      - name: Save derived data
+        if: steps.commit.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            data/prices
+            data/sec/fundamentals.parquet
+            data/sec/shares_fallback.parquet
+            data/sec/sectors.parquet
+            data/sec/f13_holdings.parquet
+            data/sec/frames
+            data/sec/accn_index.parquet
+            data/sec/full_index
+          key: derived-${{ github.run_id }}-${{ github.run_attempt }}
 
       # After the commit on purpose: a bad book turns the run red but never costs
       # the day's snapshot. The derived parquets are not in git, so this is the

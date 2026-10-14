@@ -1,0 +1,270 @@
+name: night lab
+
+# The night research agent (research/NIGHT_AGENT.md). One session per night inside
+# 23:00-02:45 Central European time, so it never overlaps the owner's other scheduled jobs.
+# Cron is UTC and best-effort (this repo's crons have fired hours late), so several
+# triggers are spread over the start of the window and the gate decides from local time.
+# 21:xx UTC is 23:xx in summer time, 22:xx UTC is 23:xx in winter time.
+#
+# Trust model. The agent job has a read-only token, no pip cache, no write access to
+# anything outside its own batch files and notebook, and cannot see secrets from its
+# shell. The commit job runs no agent and trusts nothing the agent wrote.
+on:
+  schedule:
+    - cron: '7 21 * * *'
+    - cron: '37 21 * * *'
+    - cron: '7 22 * * *'
+    - cron: '37 22 * * *'
+    - cron: '7 23 * * *'
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: 'Agent time budget in minutes for a manual test run'
+        required: false
+        default: '30'
+
+# Nothing in this workflow reads input from issues, pull requests or comments.
+permissions:
+  contents: read
+
+concurrency:
+  group: night-lab          # later triggers queue; the gate then sees the night is done
+  cancel-in-progress: false
+
+env:
+  HARNESS_SHA: 5cb683a86d   # research harness verified against items 6/14; any code change must re-verify
+  ARM_BUDGET: 12            # new parameter sets per night (research/lab.py NIGHT MODE)
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.g.outputs.run }}
+      hard_end: ${{ steps.g.outputs.hard_end }}
+      night: ${{ steps.g.outputs.night }}
+      label: ${{ steps.g.outputs.label }}
+    steps:
+      # ref: main, not the trigger-time sha: a run that waited in the queue must see the
+      # commit the session before it pushed.
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 50
+          persist-credentials: false
+      - id: g
+        env:
+          HAS_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
+          EVENT: ${{ github.event_name }}
+          MANUAL_MIN: ${{ inputs.minutes }}
+        shell: python
+        run: |
+          import os, subprocess, datetime as dt
+          from zoneinfo import ZoneInfo
+          CPH, UTC = ZoneInfo("Europe/Berlin"), dt.timezone.utc     # Central European time
+          now = dt.datetime.now(UTC); loc = now.astimezone(CPH)
+          hm = loc.hour * 100 + loc.minute
+          sched = os.environ["EVENT"] == "schedule"
+          night_day = loc.date() if hm >= 1200 else loc.date() - dt.timedelta(days=1)
+          def local_end(day, h, m):
+              # 02:45 local the morning after `day`; on the spring-forward night 02:45 does not
+              # exist, so fall back to 01:45 rather than let it slide past 03:00.
+              d = day + dt.timedelta(days=1)
+              for hh, mm in ((h, m), (h - 1, m)):
+                  t = dt.datetime(d.year, d.month, d.day, hh, mm, tzinfo=CPH)
+                  if t.astimezone(UTC).astimezone(CPH).replace(tzinfo=None) == t.replace(tzinfo=None):
+                      return t.astimezone(UTC)
+              raise SystemExit("no valid end time")
+          run, why = True, []
+          if sched:
+              end = local_end(night_day, 2, 45)
+              night, label = night_day.isoformat(), night_day.isoformat()
+              if not (hm >= 2300 or hm < 130):
+                  run = False; why.append(f"outside the night window ({loc:%H:%M} local)")
+              done = subprocess.run(["git", "log", "--since=20 hours ago", "--format=%s"],
+                                    capture_output=True, text=True).stdout.splitlines()
+              if f"night lab {night}" in done:
+                  run = False; why.append("already ran tonight")
+              if (end - now).total_seconds() < 40 * 60:
+                  run = False; why.append("under 40 min left in the window")
+          else:
+              mins = max(15, min(225, int(os.environ.get("MANUAL_MIN") or 30)))
+              end = now + dt.timedelta(minutes=mins + 25)        # setup + collect + commit
+              night, label = loc.date().isoformat(), f"test {loc.date().isoformat()}"
+          if os.environ["HAS_TOKEN"] != "true":
+              run = False; why.append("CLAUDE_CODE_OAUTH_TOKEN secret not set")
+          print(f"local {loc:%F %H:%M %Z}, night {night}, hard end {end.astimezone(CPH):%F %H:%M %Z}, "
+                f"run={run}" + (f" ({'; '.join(why)})" if why else ""))
+          with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
+              fh.write(f"run={str(run).lower()}\nhard_end={int(end.timestamp())}\nnight={night}\nlabel={label}\n")
+
+  lab:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    outputs:
+      agent: ${{ steps.agent.outcome }}
+    env:
+      # claude-code-action: scrub Anthropic and GitHub secrets from every subprocess the agent
+      # starts, and run them in their own PID namespace (needs bubblewrap, installed below).
+      CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'        # no pip cache: this job must not be able to save one
+      - run: pip -q install -r requirements.txt
+      - name: Install subprocess isolation
+        run: |
+          for i in 1 2 3; do
+            sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends bubblewrap socat && break
+            sleep 5
+          done
+          command -v bwrap
+          if [ -f /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+
+      # Read-only, and only the exact cache the last daily run committed a pointer to. A
+      # prefix match would take whatever cache is newest, including one this job saved.
+      - name: Which derived-data cache to trust
+        id: ck
+        run: echo "key=$(cat data/derived_cache_key.txt)" >> "$GITHUB_OUTPUT"
+      - name: Restore the daily pipeline's derived data
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data/prices
+            data/sec/fundamentals.parquet
+            data/sec/shares_fallback.parquet
+            data/sec/sectors.parquet
+            data/sec/f13_holdings.parquet
+            data/sec/frames
+            data/sec/accn_index.parquet
+            data/sec/full_index
+          key: ${{ steps.ck.outputs.key }}
+          fail-on-cache-miss: true
+
+      # Tonight's data state for the agent, and a stop before any agent turn is spent if the
+      # harness code is not the one verified against items 6 and 14.
+      - name: Harness check (smoke batch, not ledgered)
+        run: |
+          python research/lab.py research/batches/smoke.json --no-ledger
+          got=$(grep -o 'harness [0-9a-f]*' research/out/lab_smoke.md | head -1 | cut -d' ' -f2)
+          [ "$got" = "$HARNESS_SHA" ] || { echo "harness is $got, verified harness is $HARNESS_SHA: re-verify before the lab runs"; exit 1; }
+
+      # Night rules in research/lab.py switch on from here. The agent cannot write or remove
+      # this file.
+      - name: Night mode on
+        shell: python
+        run: |
+          import json, os, datetime as d
+          start = d.datetime.now(d.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+          open("research/.night_mode", "w").write(json.dumps({"start": start, "budget": int(os.environ["ARM_BUDGET"])}))
+          print("night mode on:", start, "budget", os.environ["ARM_BUDGET"])
+
+      # Measured from now, after setup: the agent stops starting work 15 min before the hard
+      # end and is killed 10 min before it, leaving time to collect and commit.
+      - name: Time left
+        id: t
+        env:
+          HARD_END: ${{ needs.gate.outputs.hard_end }}
+        run: |
+          left=$(( (HARD_END - $(date +%s)) / 60 ))
+          [ "$left" -gt 25 ] || { echo "not enough time left after setup ($left min)"; exit 1; }
+          echo "timeout=$(( left - 10 ))" >> "$GITHUB_OUTPUT"
+          echo "deadline=$(( HARD_END - 15 * 60 ))" >> "$GITHUB_OUTPUT"
+          echo "$left min to the hard end"
+
+      # No --dangerously-skip-permissions: anything outside the allowlist is denied. Edit(...)
+      # rules also gate the Write tool; the agent may create only tonight's batch files and its
+      # own log. Bash runs only the lab (by absolute path) and date. Reads of process and runner
+      # internals are denied; Read inside the workspace is allowed by default.
+      - name: Night agent
+        id: agent
+        continue-on-error: true
+        timeout-minutes: ${{ fromJSON(steps.t.outputs.timeout) }}
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          settings: |
+            {"env": {"BASH_DEFAULT_TIMEOUT_MS": "900000", "BASH_MAX_TIMEOUT_MS": "900000",
+                     "NIGHT_DEADLINE": "${{ steps.t.outputs.deadline }}"},
+             "permissions": {"deny": ["Read(//proc/**)", "Read(//sys/**)", "Read(//etc/**)",
+                                      "Read(//home/runner/work/_temp/**)", "Read(//home/runner/work/_actions/**)",
+                                      "Read(//home/runner/.claude/**)", "Read(//home/runner/.config/**)",
+                                      "Read(//root/**)", "Bash(cd:*)", "Bash(pushd:*)"]}}
+          prompt: |
+            Night of ${{ needs.gate.outputs.night }}. Deadline: epoch ${{ steps.t.outputs.deadline }} (UTC seconds). Turn limit: 80.
+            Batch files tonight must be named research/batches/${{ needs.gate.outputs.night }}_<slug>.json, with batch_id equal to the file name without .json.
+            Run the lab exactly as: python ${{ github.workspace }}/research/lab.py research/batches/<file>.json (add --check to validate first), with a Bash timeout of 900000 ms.
+            Read research/NIGHT_AGENT.md and follow it exactly. It is your complete brief.
+          claude_args: |
+            --model claude-sonnet-5-5
+            --max-turns 80
+            --allowedTools "Edit(research/batches/${{ needs.gate.outputs.night }}_*.json),Edit(research/NIGHT_LOG.md),Bash(python ${{ github.workspace }}/research/lab.py:*),Bash(date:*)"
+            --disallowedTools "WebFetch,WebSearch,Task,NotebookEdit,Bash(cd:*),Bash(pushd:*)"
+
+      # Untrusted, so only a first pass: anything holding an address or a secret-shaped string
+      # is held back from the artifact as well as from the commit.
+      - name: Collect the night's files
+        if: always()
+        run: |
+          rm -f research/.night_mode
+          mkdir -p "$RUNNER_TEMP/night"
+          { git ls-files -m -o --exclude-standard -- research/batches research/out research/lab_ledger.csv research/NIGHT_LOG.md \
+              | grep -v '^research/out/lab_smoke\.' || true; } | while read -r f; do
+              if grep -qEe '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}|sk-ant-|gh[pousr]_[A-Za-z0-9]{20}|github_pat_|x-access-token|-----BEGIN' "$f"; then
+                echo "held back (address or secret-shaped string): $f"; continue
+              fi
+              mkdir -p "$RUNNER_TEMP/night/$(dirname "$f")"; cp "$f" "$RUNNER_TEMP/night/$f"
+            done
+          find "$RUNNER_TEMP/night" -type f | sed "s#$RUNNER_TEMP/night/##"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: night
+          path: ${{ runner.temp }}/night/
+          retention-days: 1          # the commit job deletes it as soon as it has read it
+          if-no-files-found: ignore
+
+  # The only job with write access. It runs no agent and trusts nothing the agent wrote.
+  commit:
+    needs: [gate, lab]
+    if: always() && needs.gate.outputs.run == 'true' && needs.lab.result != 'skipped'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write               # to delete the artifact once read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 50          # to see whether tonight was already committed
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip -q install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        continue-on-error: true      # no artifact = the agent wrote nothing
+        with:
+          name: night
+          path: ${{ runner.temp }}/night
+      - name: Validate and commit
+        env:
+          AGENT_OUTCOME: ${{ needs.lab.outputs.agent }}
+          LAB_RESULT: ${{ needs.lab.result }}
+          HARD_END: ${{ needs.gate.outputs.hard_end }}
+        run: python .github/scripts/night_commit.py "$RUNNER_TEMP/night" "${{ needs.gate.outputs.night }}" "${{ needs.gate.outputs.label }}"
+      - name: Delete the artifact
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for id in $(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" -q '.artifacts[] | select(.name=="night") | .id'); do
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/actions/artifacts/$id" && echo "deleted artifact $id"
+          done
