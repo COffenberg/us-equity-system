@@ -18,9 +18,13 @@ Nothing here is re-derivable from the code — it is what was learned the hard w
   three separate times before it moved.
 
 ## What the system currently is
-40 names, equal weight, rebalanced monthly, capped 8 per sector.
-Ranked on **value only**: sales-to-price, book-to-market, cash-flow-to-price.
+Live book (`orders.py`): COMBINED = 70% value + 30% skew overlay, 40 names, equal weight,
+rebalanced monthly, capped 6 per sector. Value = sales-to-price, book-to-market,
+cash-flow-to-price. The research control in `research/lab.py` is value only, capped 8; the
+backtest figures below are for that value-only book.
 Measured 2024-09..2026-07, 23 chained months: book +37.0%/yr vs SPY +16.5%, t=1.68.
+Corrected 8 Oct (universe filter and split lookahead fixed, 24 months): +22.9%/yr vs +15.6%, t=0.68.
+After costs and tax on the item-6 harness the monthly value book nets about +0.25%/mo vs SPY (t 0.21).
 
 ## Five findings that must not be re-litigated
 1. **Screen on the real objective.** Rank signals by how a 40-name long-only book

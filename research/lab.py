@@ -99,19 +99,27 @@ MULTIPLE COMPARISONS
   df = months - 1: Bonferroni at family-wise alpha 0.10 one-sided (alpha 0.10 = the repo's registered
   p <= 0.10 gates).  It tightens as M grows (24 months, df 23: M=3 -> 1.93, M=10 -> 2.50,
   M=30 -> 2.98, M=100 -> 3.48, M=300 -> 3.93, M=1000 -> 4.42).
-  Registered experiments from BACKLOG items 1-14 are not in the ledger, so M understates the true count.
-  The bar is a filter for noise-mining, not a verdict; the batch's registered rule is the verdict.
-  REFERENCE ARMS: a variant whose param hash is already in the ledger (from an earlier batch) is a
-  reference, shown as "ref" in the bar column, and never clears. It may be re-included so an
+  Registered experiments from BACKLOG items that this lab can express are listed in
+  research/lab_prior.csv and counted in M as if ledgered; the rest (items 1-2, 7-11) are not, so M still
+  understates the true count. The bar is a filter for noise-mining, not a verdict; the batch's registered
+  rule is the verdict. It only rises: no budget keeps it reachable, which is why anything found here
+  goes to a forward test registered in advance, never straight into the book.
+  CANONICAL PARAMS: at sector scope an equal-weight SP+bm+cfp signal is stored as value (it is the same
+  score), and cap >= n as null, so the same construction cannot hide under a second hash.
+  REFERENCE ARMS: a variant whose param hash is already in the ledger or the prior list is a
+  reference, shown as "ref" in the bar column, and never clears. So does a variant whose monthly
+  returns are identical to the control's (nothing was tested). It may be re-included so an
   interaction is visible, but re-testing old params under a new rule, or on a later data state, cannot
   turn them into a discovery: the first run is the trial.
 
 NIGHT MODE (research/.night_mode exists; the night-lab workflow writes it, nothing else should)
   JSON {"start": "<ISO UTC>", "budget": <int>}. While it exists the lab additionally refuses:
   --no-ledger (a run whose numbers were seen must be counted); re-running a batch_id already in the
-  ledger (the verdict is the first run's); a variant that changes aum (a cost-model input, not a
-  candidate); and a batch that would take tonight's NEW param hashes (first ledgered at or after
-  "start") above "budget". Each night widens M, so the budget is what keeps the bar reachable.
+  ledger (the verdict is the first run's); any arm with a non-default aum (a cost-model input, not a
+  candidate); a control that is not already in the ledger or prior list; nnull other than 200; a
+  batch_id over 36 or a variant name over 24 characters; a second lab run while one is in progress;
+  and a batch that would take tonight's NEW param hashes (first ledgered at or after "start") above
+  "budget". Each night widens M; the budget slows that, it does not stop it.
 
 FAIL LOUD (exit code 2, nothing written to the ledger)
   missing data or harness files; harness chain markers changed; unknown or invalid params; duplicate
@@ -127,6 +135,7 @@ ROOT = Path(__file__).resolve().parent.parent
 RES, OUT = ROOT/"research", ROOT/"research"/"out"
 LEDGER = RES/"lab_ledger.csv"
 NIGHT_MARK = RES/".night_mode"
+PRIOR = RES/"lab_prior.csv"
 H12, H6, H14 = RES/"test_skew_overlay.py", RES/"test_rebalance_tax.py", RES/"test_rank_buffer.py"
 ALPHA_FW = 0.10
 SEED = {"iid": 20261010, "ar1": 20261012}         # item 6's and item 14's null seeds (asserted below)
@@ -194,6 +203,8 @@ def resolve(base, over, where):
     sig = {c: _num(w, f"{where}: signal weight {c}") for c, w in sig.items()}
     if any(w <= 0 for w in sig.values()):
         fail(f"{where}: signal weights must be > 0 (got {sig})")
+    if p["rank_scope"] == "sector" and set(sig) == {"SP", "bm", "cfp"} and len(set(sig.values())) == 1:
+        sig = {"value": 1.0}                               # the harness value score, by definition
     p["signal"] = sig
     p["min_adv"] = _num(p["min_adv"], f"{where}: min_adv")
     if p["min_adv"] < 5e5:
@@ -305,18 +316,32 @@ def read_night_mode():
         fail(f"{NIGHT_MARK} is unreadable ({e}); refusing to guess whether night rules apply")
 
 
-def night_checks(night, a, B, L, reruns, new_hashes):
+def read_prior():
+    if not PRIOR.exists(): return set()
+    out = set()
+    for r in csv.DictReader(open(PRIOR)):
+        out.add(phash(resolve(DEFAULTS, json.loads(r["overrides"]), f"{PRIOR.name} {r['name']}")))
+    return out
+
+
+def night_checks(night, a, B, L, reruns, new_hashes, known):
     bid, arms = B["batch_id"], B["arms"]
+    if len(bid) > 36 or any(len(nm) > 24 for _, nm, _ in arms):
+        fail("night lab: batch_id at most 36 characters and variant names at most 24")
+    if B["nnull"] != 200:
+        fail("night lab: nnull is fixed at 200 (omit it)")
+    if phash(arms[0][2]) not in known:
+        fail("night lab: the control must be a parameter set already in the ledger or research/lab_prior.csv "
+             "(the research control, the live book, or an earlier arm)")
     if a.no_ledger:
         fail("night lab: --no-ledger is refused. A run whose numbers were seen must be counted; "
              "use --check to validate a spec without running it.")
     if reruns:
         fail(f"night lab: batch_id {bid!r} is already in the ledger and its verdict is the first run's. "
              f"Register a new batch_id; earlier params re-included there show as reference arms.")
-    ctl_aum = arms[0][2]["aum"]
-    bad = [nm for role, nm, p in arms if role == "variant" and p["aum"] != ctl_aum]
+    bad = [nm for role, nm, p in arms if p["aum"] != DEFAULTS["aum"]]
     if bad:
-        fail(f"night lab: aum is a cost-model input, not a candidate; variants may not change it ({bad})")
+        fail(f"night lab: aum is a cost-model input, not a candidate; no arm may change it ({bad})")
     first = L.groupby("param_hash").timestamp.min() if len(L) else pd.Series(dtype=str)
     used = int((first >= night["start"]).sum())
     if used + len(new_hashes) > night["budget"]:
@@ -542,11 +567,17 @@ def main():
     reruns = check_rerun(L, B)
     arms = B["arms"]
     hashes = [phash(p) for _, _, p in arms]
-    M = len(set(L.param_hash) | set(hashes))
-    new = len(set(hashes) - set(L.param_hash))
-    prior = set(L.param_hash)                                  # reference arms: tested before this batch
+    prior = set(L.param_hash) | read_prior()                   # tested before this batch: reference arms
+    M = len(prior | set(hashes))
+    new = len(set(hashes) - prior)
     night = read_night_mode()
-    night_used = night_checks(night, a, B, L, reruns, set(hashes) - prior) if night else None
+    if night:
+        import fcntl
+        OUT.mkdir(parents=True, exist_ok=True)
+        lockf = open(OUT/".lab.lock", "w")
+        try: fcntl.flock(lockf, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError: fail("night lab: another lab run is in progress; run batches one at a time")
+    night_used = night_checks(night, a, B, L, reruns, set(hashes) - prior, prior) if night else None
     if a.check:
         h = harness_sources()
         check_data([h[0], h[1], h[4]])
@@ -635,7 +666,7 @@ def main():
         if role == "variant":
             d = b["monthly"] - cm
             r.update(d_mo=float(d.mean()), d_t=tstat(d), D=b["post_ann"] - cpost)
-            r["ref"] = phash(p) in prior
+            r["ref"] = phash(p) in prior or bool(np.array_equal(b["monthly"], cm))   # seen before, or a no-op
             r["clears"] = False if r["ref"] else bool(r["d_t"] >= tbar)
             if ck != cons_key(ctl):
                 kd = dkind(p); r["null_kind_d"] = kd
@@ -656,7 +687,7 @@ def main():
     led = "NOT LEDGERED: --no-ledger dev run" if a.no_ledger else f"{new} new in this batch"
     S = [f"# lab {bid} | {today} | variants ever tested M = {M} ({led}) | bar: d t >= {tbar:.2f}",
          f"bar rule: Bonferroni, family-wise alpha {ALPHA_FW:g} one-sided: t of d (variant - control, monthly) "
-         f">= quantile 1-{ALPHA_FW:g}/M ({tbar_how}); M = distinct param hashes in research/lab_ledger.csv + this batch",
+         f">= quantile 1-{ALPHA_FW:g}/M ({tbar_how}); M = distinct param hashes in research/lab_ledger.csv + research/lab_prior.csv + this batch",
          f"hypothesis: {B['hypothesis']}",
          f"registered: {B['registered']}",
          data_line + (f" | re-run #{reruns + 1} of this batch_id" if reruns else "")

@@ -41,3 +41,4 @@ data/sec/frames_earn/
 # CI reads it from the SEC_CONTACT_EMAIL secret instead.
 .sec_contact
 research/.night_mode
+research/out/.lab.lock

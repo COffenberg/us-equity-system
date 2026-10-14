@@ -1,0 +1,13 @@
+source,name,overrides
+BACKLOG item 3 (pre-correction harness),FLOOR2M,"{""min_adv"": 2000000}"
+BACKLOG item 3 (pre-correction harness),FLOOR10M,"{""min_adv"": 10000000}"
+BACKLOG item 3 (pre-correction harness),FLOOR50M,"{""min_adv"": 50000000}"
+BACKLOG item 6,QUARTERLY,"{""rebalance"": ""quarterly""}"
+BACKLOG item 12,CORE_CAP6,"{""cap"": 6}"
+BACKLOG item 12,COMBINED_LIVE,"{""cap"": 6, ""signal"": {""value"": 0.7, ""skw"": 0.3}}"
+BACKLOG item 13,MKT,"{""rank_scope"": ""market"", ""signal"": {""SP"": 1, ""bm"": 1, ""cfp"": 1}}"
+BACKLOG item 13,SECREL_UNCAPPED,"{""cap"": null}"
+BACKLOG item 13,MKT_UNCAPPED,"{""rank_scope"": ""market"", ""signal"": {""SP"": 1, ""bm"": 1, ""cfp"": 1}, ""cap"": null}"
+BACKLOG item 14,BUFFER60,"{""buffer"": 60}"
+BACKLOG item 14,BUFFER80,"{""buffer"": 80}"
+BACKLOG item 14,BUFFER120,"{""buffer"": 120}"

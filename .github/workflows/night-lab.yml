@@ -6,9 +6,13 @@ name: night lab
 # triggers are spread over the start of the window and the gate decides from local time.
 # 21:xx UTC is 23:xx in summer time, 22:xx UTC is 23:xx in winter time.
 #
-# Trust model. The agent job has a read-only token, no pip cache, no write access to
-# anything outside its own batch files and notebook, and cannot see secrets from its
-# shell. The commit job runs no agent and trusts nothing the agent wrote.
+# Trust model, as enforced (not hoped for). The agent job's GitHub token is read-only and
+# expires with the job; the job saves no pip cache. Claude Code's permission rules let the
+# agent create only tonight's batch files and edit its own log, and run only the lab script
+# and one date command; secrets are scrubbed from the environment of any command it starts.
+# The agent can still read the workspace. Nothing it writes reaches the repo except through
+# the commit job, which runs no agent and validates everything. The live book cannot be
+# reached from here: the daily pipeline restores only a cache it pointed to itself.
 on:
   schedule:
     - cron: '7 21 * * *'
@@ -56,6 +60,7 @@ jobs:
           HAS_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
           EVENT: ${{ github.event_name }}
           MANUAL_MIN: ${{ inputs.minutes }}
+          RUN_NUMBER: ${{ github.run_number }}
         shell: python
         run: |
           import os, subprocess, datetime as dt
@@ -82,14 +87,18 @@ jobs:
                   run = False; why.append(f"outside the night window ({loc:%H:%M} local)")
               done = subprocess.run(["git", "log", "--since=20 hours ago", "--format=%s"],
                                     capture_output=True, text=True).stdout.splitlines()
-              if f"night lab {night}" in done:
+              # any outcome counts, refused or empty included: one session per night
+              if any(x == f"night lab {night}" or x.startswith(f"night lab {night} (") for x in done):
                   run = False; why.append("already ran tonight")
               if (end - now).total_seconds() < 40 * 60:
                   run = False; why.append("under 40 min left in the window")
           else:
-              mins = max(15, min(225, int(os.environ.get("MANUAL_MIN") or 30)))
+              mins = max(15, min(180, int(os.environ.get("MANUAL_MIN") or 30)))
               end = now + dt.timedelta(minutes=mins + 25)        # setup + collect + commit
-              night, label = loc.date().isoformat(), f"test {loc.date().isoformat()}"
+              # its own prefix, so a test's batch files never share a name with a real night's
+              night = label = f"t{os.environ['RUN_NUMBER']}"
+          if not os.path.exists("data/derived_cache_key.txt"):
+              run = False; why.append("no derived-cache pointer on main yet")
           if os.environ["HAS_TOKEN"] != "true":
               run = False; why.append("CLAUDE_CODE_OAUTH_TOKEN secret not set")
           print(f"local {loc:%F %H:%M %Z}, night {night}, hard end {end.astimezone(CPH):%F %H:%M %Z}, "
@@ -181,13 +190,14 @@ jobs:
 
       # No --dangerously-skip-permissions: anything outside the allowlist is denied. Edit(...)
       # rules also gate the Write tool; the agent may create only tonight's batch files and its
-      # own log. Bash runs only the lab (by absolute path) and date. Reads of process and runner
-      # internals are denied; Read inside the workspace is allowed by default.
+      # own log. Bash runs only the lab (by absolute path) and `date -u +%s`; cd is denied so a
+      # relative path cannot be redirected. The Read deny rules cover the file tools only.
+      # Pinned to a commit: the permission setup was checked against this version.
       - name: Night agent
         id: agent
         continue-on-error: true
         timeout-minutes: ${{ fromJSON(steps.t.outputs.timeout) }}
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@1d6de8cb0c237e7c15e9e1bdf973826ebae490cc   # v1.0.248
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
@@ -197,16 +207,16 @@ jobs:
              "permissions": {"deny": ["Read(//proc/**)", "Read(//sys/**)", "Read(//etc/**)",
                                       "Read(//home/runner/work/_temp/**)", "Read(//home/runner/work/_actions/**)",
                                       "Read(//home/runner/.claude/**)", "Read(//home/runner/.config/**)",
-                                      "Read(//root/**)", "Bash(cd:*)", "Bash(pushd:*)"]}}
+                                      "Read(//root/**)", "Read(./.git/**)", "Bash(cd:*)", "Bash(pushd:*)"]}}
           prompt: |
             Night of ${{ needs.gate.outputs.night }}. Deadline: epoch ${{ steps.t.outputs.deadline }} (UTC seconds). Turn limit: 80.
             Batch files tonight must be named research/batches/${{ needs.gate.outputs.night }}_<slug>.json, with batch_id equal to the file name without .json.
-            Run the lab exactly as: python ${{ github.workspace }}/research/lab.py research/batches/<file>.json (add --check to validate first), with a Bash timeout of 900000 ms.
+            Run the lab exactly as: python ${{ github.workspace }}/research/lab.py research/batches/<file>.json (add --check to validate first), with a Bash timeout of 900000 ms. The time is: date -u +%s
             Read research/NIGHT_AGENT.md and follow it exactly. It is your complete brief.
           claude_args: |
             --model claude-sonnet-5-5
             --max-turns 80
-            --allowedTools "Edit(research/batches/${{ needs.gate.outputs.night }}_*.json),Edit(research/NIGHT_LOG.md),Bash(python ${{ github.workspace }}/research/lab.py:*),Bash(date:*)"
+            --allowedTools "Edit(research/batches/${{ needs.gate.outputs.night }}_*.json),Edit(research/NIGHT_LOG.md),Bash(python ${{ github.workspace }}/research/lab.py:*),Bash(date -u +%s)"
             --disallowedTools "WebFetch,WebSearch,Task,NotebookEdit,Bash(cd:*),Bash(pushd:*)"
 
       # Untrusted, so only a first pass: anything holding an address or a secret-shaped string
@@ -255,16 +265,23 @@ jobs:
           name: night
           path: ${{ runner.temp }}/night
       - name: Validate and commit
+        id: validate
         env:
           AGENT_OUTCOME: ${{ needs.lab.outputs.agent }}
           LAB_RESULT: ${{ needs.lab.result }}
           HARD_END: ${{ needs.gate.outputs.hard_end }}
         run: python .github/scripts/night_commit.py "$RUNNER_TEMP/night" "${{ needs.gate.outputs.night }}" "${{ needs.gate.outputs.label }}"
+      # Deleted once committed, or at once if it held something secret-shaped. Otherwise it
+      # is kept for its one day so a refused or partial night can be inspected.
       - name: Delete the artifact
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
+          VALIDATED: ${{ steps.validate.outcome }}
         run: |
+          if [ "$VALIDATED" != "success" ] && [ ! -f "$RUNNER_TEMP/delete_artifact" ]; then
+            echo "kept for inspection (expires in 1 day)"; exit 0
+          fi
           for id in $(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" -q '.artifacts[] | select(.name=="night") | .id'); do
             gh api -X DELETE "repos/$GITHUB_REPOSITORY/actions/artifacts/$id" && echo "deleted artifact $id"
           done

@@ -19,11 +19,12 @@ number says. Stopping early with nothing found is a correct outcome.
 - Write/Edit: only **new** batch files for tonight, `research/batches/<night>_<slug>.json`
   (the prompt gives tonight's date), and your notebook `research/NIGHT_LOG.md`. You cannot
   edit `BACKLOG.md`, code, earlier batches or `smoke.json`.
-- Bash: only the lab, by the absolute path the prompt gives, and `date`. Always pass a
-  Bash timeout of 900000 ms to a lab run; a batch takes 1-5 minutes.
+- Bash: only the lab, by the absolute path the prompt gives, and `date -u +%s`. Always pass
+  a Bash timeout of 900000 ms to a lab run; a batch takes 1-5 minutes. Run one batch at a
+  time, in the foreground: the lab refuses a second run while one is in progress.
 
-Nothing else will run. Do not try: there is no network, no git and no way to edit code, by
-design. The workflow, not you, commits your files after you stop, and a separate job checks
+Nothing else will run. Do not try: you have no network tools, no git and no way to edit
+code, by design. The workflow, not you, commits your files after you stop, and a separate job checks
 them first (append-only ledger, one matching spec per ledgered batch, nothing secret).
 
 ## What the lab measures against
@@ -33,7 +34,9 @@ them first (append-only ledger, one matching spec per ledgered batch, nothing se
 13 and 14. It is **not** the live book. The live book (`orders.py`) is 70% value + 30% skew,
 capped at 6 per sector; in lab terms `{"signal": {"value": 0.7, "skw": 0.3}, "cap": 6}`.
 The 8-per-sector cap never binds on the research control (item 13), so testing it wastes a
-batch.
+batch. A batch's control must already be known to the lab (the ledger or
+`research/lab_prior.csv`): the research control (omit every key), the live book
+(`COMBINED_LIVE` in the prior list), or an earlier arm.
 
 ## Start of every night (in this order)
 
@@ -42,7 +45,8 @@ batch.
    nulls, the multiple-comparisons bar, reference arms and NIGHT MODE. That is your whole
    instrument.
 3. `research/NIGHT_LOG.md`: newest first. Previous nights, open leads, and the plan.
-4. `research/lab_ledger.csv`: every parameter set ever tested.
+4. `research/lab_ledger.csv`: every parameter set ever tested, and `research/lab_prior.csv`:
+   the registered BACKLOG experiments this lab can express. Both count as tested.
 5. `BACKLOG.md`: the registered experiments (items 1-14) and their verdicts. Items 6
    (quarterly), 13 (market-wide ranking) and 14 (rank-80 buffer) ran on this same harness.
 6. `research/out/lab_smoke.md`, written by tonight's check before you started. Its control
@@ -53,8 +57,9 @@ batch.
 ## Budget, and why it is small
 
 Every new parameter set widens M, and the bar (t of d) rises with M for every later
-hypothesis, including good ones. So the lab allows **12 new parameter sets per night** and
-refuses the batch that would exceed it. Spend them on the few questions most likely to
+hypothesis, including good ones. It only rises; the budget slows that, it does not stop it.
+So the lab allows **12 new parameter sets per night** and refuses the batch that would
+exceed it. Spend them on the few questions most likely to
 change what the owner does. Re-including a parameter set already in the ledger costs
 nothing; it shows as a **reference arm** ("ref") and can never clear. You also have a turn
 limit (in the prompt); write your End-of-night entry before you are near it.
@@ -84,20 +89,22 @@ Repeat while budget, turns and time remain:
      never a pass condition.
      `"SUPPORTED if d >= +0.20%/mo AND d t >= 1.5 AND D > 0; REFUTED if d <= 0; else INCONCLUSIVE"`
    `aum` is a cost-model input, not a candidate; the lab refuses a variant that changes it.
-   Keep `nnull` at the default (omit it).
+   Omit `nnull` (fixed at 200 at night). Keep batch_id at most 36 characters, all lower
+   case (tonight's prefix plus a short slug), and variant names at most 24.
 4. `--check` first (it validates, shows which arms are references and the night budget),
    then run it for real. There is no `--no-ledger` at night: a run whose numbers you saw is
    counted.
 5. **Judge by the registered rule**, then say whether any variant cleared the bar printed at
-   the top. Read the coverage lines. You cannot inspect a run beyond its scoreboard and
-   coverage lines, so a number that looks too good, or a coverage line that is not OK, is
-   logged as **unverified, not a lead**.
+   the top. Read the coverage lines (the lab refuses to finish a run whose coverage is
+   implausible). You cannot inspect a run beyond its scoreboard and coverage lines, so a
+   number that looks too good is logged as **unverified, not a lead**.
 6. **Log it** before the next batch, so a stopped run loses nothing.
 
 ## What counts as a lead
 
 A variant is a **lead** only if it meets its batch's registered rule AND clears the bar AND
-is not a reference arm AND is not unverified. A lead is not a result. Log it under `leads:`
+is not a reference arm AND is not unverified. Expect leads to be rare: the bar is strict on
+purpose and gets stricter. A lead is not a result. Log it under `leads:`
 with a forward test and its threshold, written now, before the forward data exists: that log
 entry is the registration, and the owner moves it into `BACKLOG.md`. It never goes into the
 book. Everything else that met its rule but not the bar is "suggestive": say so plainly.

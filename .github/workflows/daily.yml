@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: write      # the run commits snapshots and predictions back
+  actions: read        # to confirm the derived-data cache was saved before pointing at it
 
 concurrency:
   group: daily-pipeline          # never let two runs write snapshots at once
@@ -143,12 +144,40 @@ jobs:
       - name: Regenerate the dashboard
         run: python dashboard.py
 
-      # Only the irreplaceable outputs are tracked; derived parquets are ignored.
-      # The pointer names the cache saved in the next step; the next run restores only that.
-      - name: Commit what changed
-        id: commit
+      # Saved before the commit, and the pointer below names it only once GitHub confirms it
+      # exists (a failed save is just a warning). A red sanity check later cannot freeze it.
+      - name: Save derived data
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            data/prices
+            data/sec/fundamentals.parquet
+            data/sec/shares_fallback.parquet
+            data/sec/sectors.parquet
+            data/sec/f13_holdings.parquet
+            data/sec/frames
+            data/sec/accn_index.parquet
+            data/sec/full_index
+          key: derived-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Confirm the cache exists
+        id: saved
+        env:
+          GH_TOKEN: ${{ github.token }}
+          KEY: derived-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
-          echo "derived-${{ github.run_id }}-${{ github.run_attempt }}" > data/derived_cache_key.txt
+          if gh cache list -R "$GITHUB_REPOSITORY" --key "$KEY" --json key -q '.[].key' | grep -qx "$KEY"; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::cache $KEY not found after save; keeping the previous pointer"; echo "ok=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Only the irreplaceable outputs are tracked; derived parquets are ignored.
+      # The pointer names the cache just saved; the next run restores only that.
+      - name: Commit what changed
+        run: |
+          if [ "${{ steps.saved.outputs.ok }}" = "true" ]; then
+            echo "derived-${{ github.run_id }}-${{ github.run_attempt }}" > data/derived_cache_key.txt
+          fi
           git config user.name  "us-equity-bot"
           git config user.email "214131671+COffenberg@users.noreply.github.com"
           git add -A
@@ -164,23 +193,6 @@ jobs:
             # A run that recorded the day but could not push it must not look green.
             [ "$pushed" = 1 ] || { echo "push failed 3 times -- snapshot NOT saved"; exit 1; }
           fi
-
-      # Saved explicitly, right after the commit that points at it, so a red sanity check
-      # below does not freeze the cache the way a post-step save would.
-      - name: Save derived data
-        if: steps.commit.outcome == 'success'
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            data/prices
-            data/sec/fundamentals.parquet
-            data/sec/shares_fallback.parquet
-            data/sec/sectors.parquet
-            data/sec/f13_holdings.parquet
-            data/sec/frames
-            data/sec/accn_index.parquet
-            data/sec/full_index
-          key: derived-${{ github.run_id }}-${{ github.run_attempt }}
 
       # After the commit on purpose: a bad book turns the run red but never costs
       # the day's snapshot. The derived parquets are not in git, so this is the
