@@ -60,6 +60,10 @@ def score_rows():
     f = ROOT/"forward/scoreboard.parquet"
     if not f.exists(): return None
     S = pd.read_parquet(f)
+    # score.py writes an empty frame (no columns) when no frozen name priced -> skip, don't crash
+    if S.empty or "days" not in S.columns:
+        print("scoreboard empty or malformed -- skipping score table")
+        return None
     S = S[S.days >= 0].sort_values(["frozen","list"])
     out = []
     for r in S.itertuples():
